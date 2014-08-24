@@ -1,0 +1,122 @@
+#!/usr/bin/python
+#####################################################################
+#
+# This file is licensed under the University of Illinois/NCSA Open 
+# Source License. See LICENSE.TXT for details.
+#
+#####################################################################
+
+#####################################################################
+#
+# Name: flipit-cc
+#
+# Description: Wrapper script to hide the process of compilation for 
+#				fault injection. Use it like you would a regular 
+#				compiler.
+#
+#####################################################################
+import sys
+import os
+print os.system('pwd')
+import glob
+
+# If there is a flipit-cc config file in the current 
+# directory, use that if not use the one in the flipit directory
+if os.path.isfile("config.py"):
+	print os.getcwd()
+	sys.path.insert(0, os.getcwd())
+from config import *
+
+argc = len(sys.argv)
+
+
+def shouldInject(argv, notInject):
+	for i in notInject:
+		if i in argv:
+			return False
+	return True
+
+def removeLinking(flags):
+	noLinker = " "
+	for i in flags.split(" "):
+		if i[0:2] == "-L" or i[0:2] =="-l" or i[0:2] == "-Z":
+			continue
+		else:
+			noLinker += i + " "
+	return noLinker
+
+def setConfig(argv):
+	configs = glob.glob('*.config')
+	if len(configs) > 0:
+		config = configs[0]
+
+if (shouldInject(sys.argv, notInject)):
+
+	setConfig(sys.argv)
+
+	step1 = "clang -emit-llvm "
+	step2 = "llvm-link " + FLIPIT_PATH +"/src/corrupt/corrupt.bc "
+	step3 = "opt -load "+ LLVM_BUILD_PATH + "/lib/Transforms/FlipIt/Debug+Asserts/faults.so -DynamicFaults" \
+			+ " -config " + config \
+			+ " -singleInj " + str(singleInj) \
+			+ " -prob " + str(prob) \
+			+ " -byte " + str(byte) \
+			+ " -ptr " + str(ptr) \
+			+ " -ctrl " + str(ctrl) \
+			+ " -arith " + str(arith) \
+			+ " -funcList " + funcList
+	step4 = "clang " 
+	fileName = ""
+	fileNameBC = ""
+	fileObj = ""
+
+
+	#loop over argv and assign values as needed
+	i = 1
+	while i < argc: #sys.argv:
+		arg = sys.argv[i]
+		if arg == "-O2" or arg == "-O3" or arg =="-O5":
+			arg = "-g -O3 "#-emit-llvm "
+			#step4 += "-01 "
+		elif ".c" in arg:
+			fileName = arg[0:-2]# grab file name and path
+		elif "-o" in arg:
+			step1 += arg + " "
+			arg = sys.argv[i+1]
+			fileObj = arg
+			fileNameBC = arg[0:-2] + ".bc" #modify to generate .bc
+			arg = fileNameBC
+			i += 1
+		#append
+		step1 += arg + " "
+		i += 1
+	path = fileName[0:fileNameBC.rfind("/")]
+	
+	#grab the path the the file we are compiling to place the object file in the correct location
+	pos = fileObj.rfind("/", 0, len(fileObj))
+	filePath = "./"
+	if pos != -1:
+		filePath += fileObj[0:pos] + "/"
+	
+	#build commands to launch
+	step2 +=  fileNameBC + " -o " + fileName + ".crpt.bc"
+	#step2 +=  fileNameBC + " " + filePath + "corrupt.bc" + " -o " + fileName + ".crpt.bc"
+	step3 += " < " + fileName + ".crpt.bc > " + fileName + ".final.bc 2> " + fileName + ".LLVM.txt"
+	step4 += "-O3  -c " + fileName + ".final.bc  -o " + fileObj 
+
+	if verbose == True:
+		print step1 + "\n\n" + step2 + "\n\n" + step3 + "\n\n" + step4
+
+	os.system("rm "+ filePath +"*.bc")
+	if SHOW != "":
+		os.system(step1 + " -I" + removeLinking(SHOW))
+	else:
+		os.system(step1)
+	os.system(step2)
+	os.system(step3)
+	os.system(step4)
+else:
+
+	sys.argv[0] = cc
+	os.system( ' '.join(sys.argv) )
+
