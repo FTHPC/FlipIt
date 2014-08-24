@@ -13,8 +13,6 @@ FlipIt: An LLVM Based Fault Injector for HPC
 3.) Modify your bashrc file to add directory to path and set some environment variables:
 
 ```
-#!bash
-
  PATH = $PATH:/path/to/build/Debug+Asserts/bin
  export PATH
  export LLVM_BUILD_PATH=/path/to/build/
@@ -25,7 +23,6 @@ FlipIt: An LLVM Based Fault Injector for HPC
 4.) Run script to setup FlipIt with LLVM:
 
 ```
-#!bash
 cd $FLIPIT_PATH/
 ./setup
 ```
@@ -33,7 +30,6 @@ cd $FLIPIT_PATH/
 
 
 ```
-#!bash
 cd $FLIPIT_PATH/examples
 ./testPass.sh
 ```
