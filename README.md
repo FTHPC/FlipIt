@@ -20,7 +20,7 @@ FlipIt: An LLVM Based Fault Injector for HPC
  export FLIPIT_PATH=/path/to/flipit
 ```
 
-4.) Run script to setup FlipIt with LLVM:
+4.) Run script to setup FlipIt with LLVM (Note: If you're not using LLVM version 3.4, the LLVM #include files in [faults.h](src/pass/faults.cpp) might not be correct. This is due to changes in the directory structure in LLVM between releases.):
 
 ```
 cd $FLIPIT_PATH/
