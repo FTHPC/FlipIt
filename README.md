@@ -8,7 +8,11 @@ FlipIt: An LLVM Based Fault Injector for HPC
 
 1.) Follow Steps from http://clang.llvm.org/get_started.html to install LLVM and Clang
 
-2.) Get FlipIt: git clone git@github.com:aperson40/FlipIt.git
+2.) Get FlipIt: 
+
+```
+git clone git@github.com:aperson40/FlipIt.git
+```
 
 3.) Modify your bashrc file to add directory to path and set some environment variables:
 
