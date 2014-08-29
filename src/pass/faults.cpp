@@ -182,8 +182,7 @@ vector<string> DynamicFaults::splitAtSpace(string spltStr) {
     return strLst;
 }
 
-double DynamicFaults::getInstProb(Instruction* I)
-{
+double DynamicFaults::getInstProb(Instruction* I) {
     /*First check if it is a call to a function listed in the config file*/
     if (CallInst *callInst = dyn_cast<CallInst>(I)) {
         if (callInst->getCalledFunction() == NULL) /* function pointers will be null */
@@ -200,8 +199,7 @@ double DynamicFaults::getInstProb(Instruction* I)
     return instProbs.find(type) != instProbs.end() ? instProbs[type] : siteProb;
 }
 
-bool DynamicFaults::injectControl(Instruction* I, int faultIndex)
-{
+bool DynamicFaults::injectControl(Instruction* I, int faultIndex) {
     if (I == NULL)
         return false;
 
@@ -237,8 +235,7 @@ bool DynamicFaults::injectControl(Instruction* I, int faultIndex)
 }
 
 
-bool DynamicFaults::injectArithmetic(Instruction* I, int faultIndex)
-{
+bool DynamicFaults::injectArithmetic(Instruction* I, int faultIndex) {
     if (I == NULL)
         return false;
 
@@ -272,8 +269,7 @@ bool DynamicFaults::injectArithmetic(Instruction* I, int faultIndex)
 }
 
 
-bool DynamicFaults::injectPointer(Instruction* I, int faultIndex)
-{
+bool DynamicFaults::injectPointer(Instruction* I, int faultIndex) {
     if (I == NULL)
         return false;
 
@@ -307,8 +303,7 @@ bool DynamicFaults::injectPointer(Instruction* I, int faultIndex)
     return false;
 }
 
-bool DynamicFaults::injectCall(Instruction* I, int faultIndex)
-{
+bool DynamicFaults::injectCall(Instruction* I, int faultIndex) {
     if (I == NULL)
         return false;
 
@@ -334,8 +329,7 @@ bool DynamicFaults::injectCall(Instruction* I, int faultIndex)
     return false;
 }
 
-bool DynamicFaults::inject_Store_Data(Instruction* I, std::vector<Value*> args, CallInst* CallI)
-{
+bool DynamicFaults::inject_Store_Data(Instruction* I, std::vector<Value*> args, CallInst* CallI) {
     args.push_back(I->getOperand(0)); // value stored
 
     /*Integer Data*/
@@ -375,8 +369,7 @@ bool DynamicFaults::inject_Store_Data(Instruction* I, std::vector<Value*> args, 
     return true;
 }
 
-bool DynamicFaults::inject_Compare(Instruction* I, std::vector<Value*> args, CallInst* CallI)
-{
+bool DynamicFaults::inject_Compare(Instruction* I, std::vector<Value*> args, CallInst* CallI) {
     /* select a random arg to corrupt because corrupting the result will yeild a 50% chance of branching incorrectly */
     unsigned int opPos = rand() % 2;
     PtrToIntInst* p2iI = NULL;
@@ -455,8 +448,7 @@ bool DynamicFaults::inject_Compare(Instruction* I, std::vector<Value*> args, Cal
 }
 
 
-bool DynamicFaults::inject_Generic(Instruction* I, std::vector<Value*> args, CallInst* CallI,  BasicBlock* BB)
-{
+bool DynamicFaults::inject_Generic(Instruction* I, std::vector<Value*> args, CallInst* CallI,  BasicBlock* BB) {
     Instruction* INext=NULL;
     BasicBlock::iterator BI = *I;
     args.push_back( &(*I));
@@ -545,8 +537,7 @@ bool DynamicFaults::inject_Generic(Instruction* I, std::vector<Value*> args, Cal
 }
 
 
-bool DynamicFaults::inject_Store_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI)
-{
+bool DynamicFaults::inject_Store_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI) {
 
     PtrToIntInst* p2iI = NULL;
     IntToPtrInst* i2pI = NULL;
@@ -623,8 +614,7 @@ bool DynamicFaults::inject_Store_Ptr(Instruction* I, std::vector<Value*> args, C
     return true;
 }
 
-bool DynamicFaults::inject_Load_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB)
-{
+bool DynamicFaults::inject_Load_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB) {
 
     Instruction* INext;
     PtrToIntInst* p2iI = NULL;
@@ -818,8 +808,7 @@ bool DynamicFaults::inject_Load_Ptr(Instruction* I, std::vector<Value*> args, Ca
     return true;
 }
 
-bool DynamicFaults::inject_Alloc_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB)
-{
+bool DynamicFaults::inject_Alloc_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB) {
 
     Instruction* INext=NULL;
     PtrToIntInst* p2iI = NULL;
@@ -941,8 +930,7 @@ bool DynamicFaults::inject_Alloc_Ptr(Instruction* I, std::vector<Value*> args, C
     return true;
 }
 
-int DynamicFaults::selectArgument(CallInst* callInst)
-{
+int DynamicFaults::selectArgument(CallInst* callInst) {
     int arg = -1;
     int possArgLen = callInst->getNumArgOperands();
     std::vector<int> argPos;
@@ -999,8 +987,7 @@ int DynamicFaults::selectArgument(CallInst* callInst)
     return arg;
 }
 
-bool DynamicFaults::inject_Call(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB)
-{
+bool DynamicFaults::inject_Call(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB) {
     PtrToIntInst* p2iI = NULL;
     IntToPtrInst* i2pI = NULL;
     Value* corruptVal = NULL;
@@ -1073,8 +1060,7 @@ bool DynamicFaults::inject_Call(Instruction* I, std::vector<Value*> args, CallIn
     return true;
 }
 
-bool DynamicFaults::inject_GetElementPtr_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB)
-{
+bool DynamicFaults::inject_GetElementPtr_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB) {
     Instruction* INext=NULL;
     PtrToIntInst* p2iI = NULL;
     IntToPtrInst* i2pI = NULL;
