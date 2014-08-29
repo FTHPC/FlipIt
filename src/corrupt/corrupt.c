@@ -44,7 +44,8 @@ static double (*FLIPIT_FaultProb)() = NULL;
 
 static void flipit_parseArgs(int argc, char** argv);
 static int flipit_shouldInject(int fault_index, int inject_once);
-static void flipit_print_injectedErr(char* type, unsigned int bPos, int fault_index, double prob, double p);
+static void flipit_print_injectedErr(char* type, unsigned int bPos, int fault_index, double prob,
+                                     double p);
 
 
 /***********************************************************************************************/
@@ -205,7 +206,8 @@ static int flipit_shouldInject(int fault_index, int inject_once) {
     return inject;
 }
 
-static void flipit_print_injectedErr(char* type, unsigned int bPos, int fault_index, double prob, double p) {
+static void flipit_print_injectedErr(char* type, unsigned int bPos, int fault_index, double prob,
+                                     double p) {
     printf("\n/*********************************Start**************************************/"
             "\nSuccessfully injected %s error!!\nRank: %d"
             "\nTotal # faults injected: %d" 
@@ -213,7 +215,8 @@ static void flipit_print_injectedErr(char* type, unsigned int bPos, int fault_in
             "\nIndex of the fault site: %d"
             "\nFault site probability: %e"
             "\nChosen random probability is: %e" 
-            "\nAttempts since last injection: %lu", type, FLIPIT_Rank, FLIPIT_InjectionCount, bPos, fault_index, 
+            "\nAttempts since last injection: %lu", type, FLIPIT_Rank, FLIPIT_InjectionCount,
+                                                    bPos, fault_index, 
             prob, p, FLIPIT_Attempts);   
     if (FLIPIT_CustomLogger != NULL)
         FLIPIT_CustomLogger(stdout);
@@ -225,7 +228,8 @@ static void flipit_print_injectedErr(char* type, unsigned int bPos, int fault_in
 /* The functions below this are inserted by the compiler pass to flip a bit                    */
 /***********************************************************************************************/
 
-char corruptIntData_8bit(int fault_index, int inject_once, double prob, int byte_val, char inst_data) {
+char corruptIntData_8bit(int fault_index, int inject_once, double prob, int byte_val,
+                         char inst_data) {
     unsigned int bPos;
     double p;
 
