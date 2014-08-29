@@ -14,7 +14,7 @@
 /*                                                                                             */
 /***********************************************************************************************/
 
-#include "faults.h"
+#include "./faults.h"
 
 
 DynamicFaults::DynamicFaults() : ModulePass(ID) {
@@ -22,7 +22,7 @@ DynamicFaults::DynamicFaults() : ModulePass(ID) {
     func_corruptIntData_16bit = NULL;
     func_corruptIntData_32bit = NULL;
     func_corruptIntData_64bit = NULL;
-    func_corruptPtr2Int_64bit = NULL; 
+    func_corruptPtr2Int_64bit = NULL;
     func_corruptFloatData_32bit = NULL;
     func_corruptFloatData_64bit = NULL;
     func_corruptIntAdr_8bit = NULL;
@@ -31,12 +31,12 @@ DynamicFaults::DynamicFaults() : ModulePass(ID) {
     func_corruptIntAdr_64bit = NULL;
     func_corruptFloatAdr_32bit = NULL;
     func_corruptFloatAdr_64bit = NULL;
-} 
+}
 
-bool DynamicFaults::runOnModule(Module &M) { 
+bool DynamicFaults::runOnModule(Module &M) {
     srand(time(NULL));
-    if(byte_val < -1 || byte_val > 7) 
-        byte_val = rand() % 8; 
+    if (byte_val < -1 || byte_val > 7)
+        byte_val = rand() % 8;
 
     /* Check for assertion violation(s) */
     assert(byte_val <= 7 && byte_val >= -1);
@@ -44,9 +44,9 @@ bool DynamicFaults::runOnModule(Module &M) {
     assert(ijo == 1 || ijo == 0);
     assert(ptr_err == 1 || ptr_err == 0);
     assert(arith_err == 1 || arith_err == 0);
-    assert(ptr_err == 1 || ptr_err == 0);                
-    
-    
+    assert(ptr_err == 1 || ptr_err == 0);
+
+
     Module::FunctionListType &functionList = M.getFunctionList();
     vector<string> flist = splitAtSpace(func_list);
     unsigned faultIdx = 0;
@@ -55,73 +55,71 @@ bool DynamicFaults::runOnModule(Module &M) {
 
     init(faultIdx, displayIdx);
 
-    /*Cache function references of the function defined in Corrupt.c to all inserting of call instructions to them */
-   cacheFunctions(functionList);        
+    /*Cache function references of the function defined in Corrupt.c to all inserting of 
+     *call instructions to them */
+    cacheFunctions(functionList);
 
-    /*Cache instructions from all the targetable functions for fault injection in case the list of functions is not
-     * defined default to inject into all function inside the file. */         
-    for (Module::iterator it = functionList.begin(); it != functionList.end(); ++it) { 
-        
+    /*Cache instructions from all the targetable functions for fault injection in case the
+     * list of functions is not defined default to inject into all function inside the file. */         
+    for (Module::iterator it = functionList.begin(); it != functionList.end(); ++it) {
+
         string cstr = it->getName().str();
-        if(cstr.find("corruptIntData_8bit")!=std::string::npos  ||
-            cstr.find("corruptIntData_16bit")!=std::string::npos   ||
-            cstr.find("corruptIntData_32bit")!=std::string::npos   ||
-            cstr.find("corruptIntData_64bit")!=std::string::npos   ||
-            cstr.find("corruptFloatData_32bit")!=std::string::npos ||
-            cstr.find("corruptFloatData_64bit")!=std::string::npos ||
-            cstr.find("corruptIntAdr_8bit")!=std::string::npos    ||
-            cstr.find("corruptIntAdr_16bit")!=std::string::npos    ||
-            cstr.find("corruptIntAdr_32bit")!=std::string::npos    ||
-            cstr.find("corruptIntAdr_64bit")!=std::string::npos    ||
-            cstr.find("corruptFloatAdr_32bit")!=std::string::npos  ||
-            cstr.find("corruptFloatAdr_64bit")!=std::string::npos  ||
-            !cstr.compare("main"))                        
+        if (cstr.find("corruptIntData_8bit") != std::string::npos  ||
+            cstr.find("corruptIntData_16bit") != std::string::npos   ||
+            cstr.find("corruptIntData_32bit") != std::string::npos   ||
+            cstr.find("corruptIntData_64bit") != std::string::npos   ||
+            cstr.find("corruptFloatData_32bit") != std::string::npos ||
+            cstr.find("corruptFloatData_64bit") != std::string::npos ||
+            cstr.find("corruptIntAdr_8bit") != std::string::npos    ||
+            cstr.find("corruptIntAdr_16bit") != std::string::npos    ||
+            cstr.find("corruptIntAdr_32bit") != std::string::npos    ||
+            cstr.find("corruptIntAdr_64bit") != std::string::npos    ||
+            cstr.find("corruptFloatAdr_32bit") != std::string::npos  ||
+            cstr.find("corruptFloatAdr_64bit") != std::string::npos  ||
+            !cstr.compare("main"))
             continue;
 
-         if (funcProbs.find(cstr) != funcProbs.end()) 
+         if (funcProbs.find(cstr) != funcProbs.end())
             if (funcProbs[cstr] == 0)
                 continue;
 
         Function* F = NULL;
         /*if the user defined function list is empty or the currently selected function is in the list of
          * user defined function list then consider the function for fault injection*/
-        if(func_list.length() == 0 || std::find(flist.begin(), flist.end(), cstr)!=flist.end()){
-            F = it; 
-        }
-        else
+        if (func_list.length() == 0 || std::find(flist.begin(), flist.end(), cstr) != flist.end()) {
+            F = it;
+        } else {
             continue;
-        if(F->begin() == F->end())
+        }
+        if (F->begin() == F->end())
             continue;
 
-        /*Cache instruction references with in a function to be considered for fault injection*/             
+        /*Cache instruction references with in a function to be considered for fault injection*/
         std::vector<Instruction*> ilist;
-        errs() << "\n\nFunction Name: " << cstr 
-            << "\n------------------------------------------------------------------------------------------------\n";
+        errs() << "\n\nFunction Name: " << cstr
+            << "\n------------------------------------------------------------------------------\n";
         enumerateSites(ilist, F, displayIdx);
 
 
         /*If the list of instruction to corrupt is not empty add code for fault injection */
-        if(!ilist.empty())
+        if (!ilist.empty())
             injectFaults(ilist, faultIdx);
-
     }/*end for*/
 
-    
+
     finalize(faultIdx, displayIdx);
     return false;
 }
 
-void  DynamicFaults::init(unsigned int& faultIdx,unsigned int& displayIdx)
-{
+void  DynamicFaults::init(unsigned int& faultIdx, unsigned int& displayIdx) {
     ifstream infile;
-    string path (getenv("HOME"));
+    string path(getenv("HOME"));
     path += "/.FlipItState";
 
     infile.open(path.c_str());
     if (infile.is_open()) {
         infile >> faultIdx >> displayIdx;
-    }
-    else {
+    } else {
         faultIdx = 0;
         displayIdx = 0;
     }
@@ -130,8 +128,7 @@ void  DynamicFaults::init(unsigned int& faultIdx,unsigned int& displayIdx)
     readConfig(configPath);
 }
 
-void DynamicFaults::readConfig(string path)
-{
+void DynamicFaults::readConfig(string path) {
     ifstream infile;
     string line;
     infile.open(path.c_str());
@@ -139,15 +136,15 @@ void DynamicFaults::readConfig(string path)
     // read inst probs
     getline(infile, line); // INSTRUCTIONS:
     getline(infile, line);
-    while(line != "FUNCTIONS:" && infile) {
+    while (line != "FUNCTIONS:" && infile) {
         unsigned long found = line.find("=");
 
         if (found != string::npos)
-            instProbs[line.substr(0,found)] = atof(line.substr(found+1).c_str());
+            instProbs[line.substr(0, found)] = atof(line.substr(found+1).c_str());
         getline(infile, line);
     }
 
-    //read func probs
+    // read func probs
     while (infile) {
         unsigned long found = line.find("=");
 
@@ -159,24 +156,21 @@ void DynamicFaults::readConfig(string path)
 }
 
 
-void  DynamicFaults::finalize(unsigned int& faultIdx, unsigned int& displayIdx)
-{
+void  DynamicFaults::finalize(unsigned int& faultIdx, unsigned int& displayIdx) {
     ofstream outfile;
-    string path (getenv("HOME"));
+    string path(getenv("HOME"));
     path += "/.FlipItState";
-    
 
     outfile.open(path.c_str() , ios::trunc);
     if (!outfile.is_open()) {
         errs() << "WARNING: unable to update injector state file at path: " << path << "\n";
-    }
-    else
+    } else {
         outfile << faultIdx << " " << displayIdx;
+    }
     outfile.close();
 }
 
-vector<string> DynamicFaults::splitAtSpace(string spltStr)
-{
+vector<string> DynamicFaults::splitAtSpace(string spltStr) {
     std::vector<std::string> strLst;
     std::istringstream isstr(spltStr);
     copy(std::istream_iterator<std::string>(isstr), std::istream_iterator<std::string>(), 
