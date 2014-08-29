@@ -211,12 +211,12 @@ bool DynamicFaults::injectControl(Instruction* I, int faultIndex) {
             break;
 
     /* Build argument list before calling Corrupt function */
-    CallInst* CallI=NULL;
+    CallInst* CallI = NULL;
     std::vector<Value*> args;
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()),faultIndex));
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()),ijo));
-    args.push_back(ConstantFP::get(Type::getDoubleTy(getGlobalContext()),getInstProb(I)));
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()),byte_val));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIndex));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), ijo));
+    args.push_back(ConstantFP::get(Type::getDoubleTy(getGlobalContext()), getInstProb(I)));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), byte_val));
 
 
     /* Choose a fault site in CmpInst and insert Corrupt function call */
@@ -249,10 +249,10 @@ bool DynamicFaults::injectArithmetic(Instruction* I, int faultIndex) {
     /* Build argument list before calling Corrupt function */
     CallInst* CallI=NULL;
     std::vector<Value*> args;
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()),faultIndex));
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()),ijo));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIndex));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), ijo));
     args.push_back(ConstantFP::get(Type::getDoubleTy( getGlobalContext()), getInstProb(I)));
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()),byte_val));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), byte_val));
 
 
     if (isa<CallInst>(I))
@@ -276,14 +276,14 @@ bool DynamicFaults::injectPointer(Instruction* I, int faultIndex) {
     CallInst* CallI = NULL;
     /*Build argument list before calling Corrupt function*/
     std::vector<Value*> args;
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()),faultIndex));
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()),ijo));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIndex));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), ijo));
     args.push_back(ConstantFP::get(Type::getDoubleTy( getGlobalContext()), getInstProb(I)));
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()),byte_val));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), byte_val));
 
     /*Locate the instruction I in the basic block BB*/
     BasicBlock *BB = I->getParent();
-    BasicBlock::iterator BI,BINext;
+    BasicBlock::iterator BI, BINext;
     for (BI = BB->begin(); BI != BB->end(); BI++)
         if (BI == *I)
             break;
@@ -310,14 +310,14 @@ bool DynamicFaults::injectCall(Instruction* I, int faultIndex) {
     CallInst* CallI = NULL;
     /*Build argument list before calling Corrupt function*/
     std::vector<Value*> args;
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()),faultIndex));
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()),ijo));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIndex));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), ijo));
     args.push_back(ConstantFP::get(Type::getDoubleTy( getGlobalContext()), getInstProb(I)));
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()),byte_val));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), byte_val));
 
     /*Locate the instruction I in the basic block BB*/
     BasicBlock *BB = I->getParent();
-    BasicBlock::iterator BI,BINext;
+    BasicBlock::iterator BI, BINext;
     for (BI = BB->begin(); BI != BB->end(); BI++)
         if (BI == *I)
             break;
@@ -363,7 +363,7 @@ bool DynamicFaults::inject_Store_Data(Instruction* I, std::vector<Value*> args, 
     }
     if (CallI) {
         Value* corruptVal = &(*CallI);
-        I->setOperand(0,corruptVal);
+        I->setOperand(0, corruptVal);
         comment = "Value";
     }
     return true;
@@ -398,16 +398,16 @@ bool DynamicFaults::inject_Compare(Instruction* I, std::vector<Value*> args, Cal
         assert(CallI);
         CallI->setCallingConv(CallingConv::C);
     } else if (I->getOperand(opPos)->getType()->isIntegerTy(64)) {
-        CallI = CallInst::Create(func_corruptIntData_64bit,args, "call_corruptIntData_64bit", I);
+        CallI = CallInst::Create(func_corruptIntData_64bit, args, "call_corruptIntData_64bit", I);
         assert(CallI);
         CallI->setCallingConv(CallingConv::C);
     } else if (I->getOperand(opPos)->getType()->isFloatTy()) {
     /*Float Data*/
-        CallI = CallInst::Create(func_corruptFloatData_32bit,args, "call_corruptFloatData_32bit", I);
+        CallI = CallInst::Create(func_corruptFloatData_32bit, args, "call_corruptFloatData_32bit", I);
         assert(CallI);
         CallI->setCallingConv(CallingConv::C);
     } else if (I->getOperand(opPos)->getType()->isDoubleTy()) {
-        CallI = CallInst::Create(func_corruptFloatData_64bit,args, "call_corruptFloatData_64bit", I);
+        CallI = CallInst::Create(func_corruptFloatData_64bit, args, "call_corruptFloatData_64bit", I);
         assert(CallI);
         CallI->setCallingConv(CallingConv::C);
     } else {
@@ -500,7 +500,7 @@ bool DynamicFaults::inject_Generic(Instruction* I, std::vector<Value*> args, Cal
          assert(CallI);
          CallI->setCallingConv(CallingConv::C);
         } else if (I->getType()->isIntegerTy(32)) {
-            CallI = CallInst::Create(func_corruptIntData_32bit,args, "call_corruptIntData_32bit", INext);
+            CallI = CallInst::Create(func_corruptIntData_32bit, args, "call_corruptIntData_32bit", INext);
             assert(CallI);
             CallI->setCallingConv(CallingConv::C);
         } else if (I->getType()->isIntegerTy(64)) {
@@ -509,7 +509,7 @@ bool DynamicFaults::inject_Generic(Instruction* I, std::vector<Value*> args, Cal
             CallI->setCallingConv(CallingConv::C);
         } else if (I->getType()->isFloatTy()) {
         /*Float Data*/
-            CallI = CallInst::Create(func_corruptFloatData_32bit, args,"call_corruptFloatData_32bit", INext);
+            CallI = CallInst::Create(func_corruptFloatData_32bit, args, "call_corruptFloatData_32bit", INext);
             assert(CallI);
             CallI->setCallingConv(CallingConv::C);
         } else if (I->getType()->isDoubleTy()) {
@@ -739,19 +739,19 @@ bool DynamicFaults::inject_Load_Ptr(Instruction* I, std::vector<Value*> args, Ca
             assert(CallI);
             CallI->setCallingConv(CallingConv::C);
         } else if (ptr->getType()->isIntegerTy(32)) {
-            CallI = CallInst::Create(func_corruptIntAdr_32bit,args, "call_corruptIntAdr_32bit", I);
+            CallI = CallInst::Create(func_corruptIntAdr_32bit, args, "call_corruptIntAdr_32bit", I);
             assert(CallI);
             CallI->setCallingConv(CallingConv::C);
         } else if (ptr->getType()->isIntegerTy(64)) {
-            CallI = CallInst::Create(func_corruptIntAdr_64bit,args, "call_corruptIntAdr_64bit", I);
+            CallI = CallInst::Create(func_corruptIntAdr_64bit, args, "call_corruptIntAdr_64bit", I);
             assert(CallI);
             CallI->setCallingConv(CallingConv::C);
         } else if (ptr->getType()->isFloatTy()) {
-            CallI = CallInst::Create(func_corruptFloatAdr_32bit,args, "call_corruptFloatAdr_32bit", I);
+            CallI = CallInst::Create(func_corruptFloatAdr_32bit, args, "call_corruptFloatAdr_32bit", I);
             assert(CallI);
             CallI->setCallingConv(CallingConv::C);
         } else if (ptr->getType()->isDoubleTy()) {
-            CallI = CallInst::Create(func_corruptFloatAdr_64bit,args, "call_corruptFloatAdr_64bit", I);
+            CallI = CallInst::Create(func_corruptFloatAdr_64bit, args, "call_corruptFloatAdr_64bit", I);
             assert(CallI);
             CallI->setCallingConv(CallingConv::C);
         } else {
@@ -1007,23 +1007,23 @@ bool DynamicFaults::inject_Call(Instruction* I, std::vector<Value*> args, CallIn
         assert(CallI);
         CallI->setCallingConv(CallingConv::C);
     } else if (I->getOperand(opNum)->getType()->isIntegerTy(16)) {
-        CallI = CallInst::Create(func_corruptIntData_16bit,args, "call_corruptIntData_16bit", I);
+        CallI = CallInst::Create(func_corruptIntData_16bit, args, "call_corruptIntData_16bit", I);
         assert(CallI);
         CallI->setCallingConv(CallingConv::C);
     } else if (I->getOperand(opNum)->getType()->isIntegerTy(32)) {
-        CallI = CallInst::Create(func_corruptIntData_32bit,args, "call_corruptIntData_32bit", I);
+        CallI = CallInst::Create(func_corruptIntData_32bit, args, "call_corruptIntData_32bit", I);
         assert(CallI);
         CallI->setCallingConv(CallingConv::C);
     } else if (I->getOperand(opNum)->getType()->isIntegerTy(64)) {
-        CallI = CallInst::Create(func_corruptIntData_64bit,args, "call_corruptIntData_64bit", I);
+        CallI = CallInst::Create(func_corruptIntData_64bit, args, "call_corruptIntData_64bit", I);
         assert(CallI);
         CallI->setCallingConv(CallingConv::C);
     } else if (I->getOperand(opNum)->getType()->isFloatTy()) {
-        CallI = CallInst::Create(func_corruptFloatData_32bit,args, "call_corruptFloatData_32bit", I);
+        CallI = CallInst::Create(func_corruptFloatData_32bit, args, "call_corruptFloatData_32bit", I);
         assert(CallI);
         CallI->setCallingConv(CallingConv::C);
     } else if (I->getOperand(opNum)->getType()->isDoubleTy()){
-        CallI = CallInst::Create(func_corruptFloatData_64bit,args, "call_corruptFloatData_64bit", I);
+        CallI = CallInst::Create(func_corruptFloatData_64bit, args, "call_corruptFloatData_64bit", I);
         assert(CallI);
         CallI->setCallingConv(CallingConv::C);
     } else {
@@ -1051,7 +1051,7 @@ bool DynamicFaults::inject_Call(Instruction* I, std::vector<Value*> args, CallIn
             corruptVal = &(*CallI);
         else
             corruptVal = &(*i2pI);
-        BI->setOperand(opNum,corruptVal);
+        BI->setOperand(opNum, corruptVal);
 
         strStream << "Arg # " << opNum;
         comment = strStream.str();
