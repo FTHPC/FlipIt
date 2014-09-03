@@ -13,6 +13,10 @@
 /*                                                                                             */
 /***********************************************************************************************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif 
+
 #ifndef CORRUPTH
 #define CORRUPTH
 
@@ -55,3 +59,6 @@ double*    corruptFloatAdr_64bit  (int fault_index, int inject_once, double prob
 
 #endif
 
+#ifdef __cplusplus
+}
+#endif

@@ -66,11 +66,14 @@ bool DynamicFaults::runOnModule(Module &M) {
      * list of functions is not defined default to inject into all function inside the file. */
     for (Module::iterator it = functionList.begin(); it != functionList.end(); ++it) {
 
-        string cstr = it->getName().str();
+        /* extract the pure function name, i.e. demangle if using c++*/
+        string cstr = demangle(it->getName().str());
+
         if (cstr.find("corruptIntData_8bit") != std::string::npos  ||
             cstr.find("corruptIntData_16bit") != std::string::npos   ||
             cstr.find("corruptIntData_32bit") != std::string::npos   ||
             cstr.find("corruptIntData_64bit") != std::string::npos   ||
+            cstr.find("corruptPtr2Int_64bit") != std::string::npos   ||
             cstr.find("corruptFloatData_32bit") != std::string::npos ||
             cstr.find("corruptFloatData_64bit") != std::string::npos ||
             cstr.find("corruptIntAdr_8bit") != std::string::npos    ||
@@ -112,6 +115,20 @@ bool DynamicFaults::runOnModule(Module &M) {
 
     finalize(faultIdx, displayIdx);
     return false;
+}
+
+string DynamicFaults::demangle(string name)
+{
+    int status;
+    string demanged;
+    char* tmp = abi::__cxa_demangle(name.c_str(), NULL, NULL, &status);
+    if (tmp == NULL)
+        return name;
+    
+    demangled = tmp;
+    free(tmp);
+    /* drop the parameter list as we only need the function name */
+    return demangled.find("(") == string::npos ? demangled : demangled.substr(0, demangled.find("("));
 }
 
 void  DynamicFaults::init(unsigned int& faultIdx, unsigned int& displayIdx) {

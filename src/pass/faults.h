@@ -28,6 +28,7 @@
     using std::ifstream;
     using std::ofstream;
     using std::ios;
+#include <cxxabi.h>
 #include <llvm/Pass.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/IR/Function.h> 
@@ -39,15 +40,15 @@
 #include <llvm/ADT/Statistic.h>
 #include <llvm/CodeGen/MachineOperand.h>
 #include <llvm/Support/CommandLine.h>
-#include "llvm/Analysis/LoopPass.h"
-#include "llvm/Support/InstIterator.h"
-#include "llvm/PassManager.h"
-#include "llvm/IR/CallingConv.h"  
-#include "llvm/Analysis/Verifier.h"
-#include "llvm/Assembly/PrintModulePass.h"
-#include "llvm/DebugInfo.h"
-#include "llvm/IR/Instruction.h"
-#include "llvm/IR/TypeBuilder.h"
+#include <llvm/Analysis/LoopPass.h>
+#include <llvm/Support/InstIterator.h>
+#include <llvm/PassManager.h>
+#include <llvm/IR/CallingConv.h>
+#include <llvm/Analysis/Verifier.h>
+#include <llvm/Assembly/PrintModulePass.h>
+#include <llvm/DebugInfo.h>
+#include <llvm/IR/Instruction.h>
+#include <llvm/IR/TypeBuilder.h>
 
 using namespace llvm;
 
@@ -81,6 +82,7 @@ namespace {
             int selectArgument(CallInst* callInst);
             void readConfig(string path);
             double getInstProb(Instruction* I);
+            string demangle(string name);
 
             bool injectControl(Instruction* I, int faultIndex);
             bool injectArithmetic(Instruction* I, int faultIndex);
