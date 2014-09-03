@@ -120,7 +120,7 @@ bool DynamicFaults::runOnModule(Module &M) {
 string DynamicFaults::demangle(string name)
 {
     int status;
-    string demanged;
+    string demangled;
     char* tmp = abi::__cxa_demangle(name.c_str(), NULL, NULL, &status);
     if (tmp == NULL)
         return name;
