@@ -36,11 +36,12 @@ echo "...Done!"
 # Reconfigure LLVM
 echo "Reconfiguring..."
 cd $LLVM_BUILD_PATH
-pwd
 $LLVM_REPO_PATH/configure
 echo "Done!"
 
 echo "Creating pass..."
+cd $FLIPIT_PATH/scripts/
+./findLLVMHeaders.py
 cd $LLVM_BUILD_PATH/lib/Transforms/FlipIt
 ./createPass.sh
 echo "Done!"

@@ -11,8 +11,8 @@
 # Name: genBC.py
 #
 # Description: Generates a bitcode header file that allows multiple 
-#				source files to be compiled with FlipIt at the same 
-#				time.
+#		source files to be compiled with FlipIt at the same 
+#		time.
 #
 #####################################################################
 

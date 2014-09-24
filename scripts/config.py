@@ -10,9 +10,9 @@
 # Name: config.py
 #
 # Description: Default configuration file that is read by flipit-cc
-#				flipit-cc will look in the cwd when compiling for this 
-#				file, and if not found it will use the one in the 
-#				FlipIt repo.
+#		flipit-cc will look in the cwd when compiling for this 
+#		file, and if not found it will use the one in the 
+#		FlipIt repo.
 #
 #####################################################################
 
@@ -41,7 +41,7 @@ ctrl = 1
 #
 #    FLIPIT_PATH - Path to FlipIt repo
 #    LLVM_BULID_PATH - Path to LLVM build directory
-#    SHOW - libraries and path wraped by mpicc 
+#    SHOW - libraries and paths wraped by mpicc 
 #
 #####################################################
 

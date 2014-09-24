@@ -974,6 +974,9 @@ int DynamicFaults::selectArgument(CallInst* callInst) {
 
     bool argFound = false;
     string funcName = callInst->getCalledFunction()->getName().str();
+    if (funcProbs.find(funcName) != funcProbs.end())
+        if (funcProbs[funcName] == 0)
+            return arg;
 
     // populate with possible args.
     if (funcName.find("llvm.lifetime") != string::npos) {

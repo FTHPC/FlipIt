@@ -109,7 +109,7 @@ if (shouldInject(sys.argv, notInject)):
 
 	os.system("rm "+ filePath +"*.bc")
 	if SHOW != "":
-		os.system(step1 + " -I" + removeLinking(SHOW))
+		os.system(step1 + removeLinking(SHOW))
 	else:
 		os.system(step1)
 	os.system(step2)

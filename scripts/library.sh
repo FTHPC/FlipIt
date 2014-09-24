@@ -12,9 +12,9 @@
 # Name: library.sh
 #
 # Description: Generates the corruption library that the program is 
-#				linked against. This library holds the user accessable 
-#				functions of FlipIt as well as the internal functions 
-#				that flip bits.
+#		linked against. This library holds the user accessable 
+#		functions of FlipIt as well as the internal functions 
+#		that flip bits.
 #
 #####################################################################
 
