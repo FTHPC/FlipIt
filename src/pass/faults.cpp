@@ -1169,13 +1169,13 @@ void DynamicFaults::cacheFunctions(Module::FunctionListType &functionList) {
     for (Module::iterator it = functionList.begin(); it != functionList.end(); ++it) {
         lstr = it->getName();
         string cstr = lstr.str();
-        if (cstr.find("corruptIntData_8bit") != td::string::npos) {
+        if (cstr.find("corruptIntData_8bit") != std::string::npos) {
             func_corruptIntData_8bit =&*it;
-        } else if (cstr.find("corruptIntData_16bit") != td::string::npos) {
+        } else if (cstr.find("corruptIntData_16bit") != std::string::npos) {
             func_corruptIntData_16bit =&*it;
-        } else if (cstr.find("corruptIntData_32bit") != td::string::npos) {
+        } else if (cstr.find("corruptIntData_32bit") != std::string::npos) {
             func_corruptIntData_32bit =&*it;
-        } else if (cstr.find("corruptIntData_64bit") != td::string::npos) {
+        } else if (cstr.find("corruptIntData_64bit") != std::string::npos) {
             func_corruptIntData_64bit =&*it;
         } else if (cstr.find("corruptPtr2Int_64bit") != std::string::npos) {
             func_corruptPtr2Int_64bit =&*it;
@@ -1239,7 +1239,7 @@ void DynamicFaults::injectFaults(std::vector<Instruction*>& ilist, unsigned& fau
             injectionType = "Control";
         } else if (arith_err && injectArithmetic(inst, faultIdx)) {
             ret = true;
-            injectionType = "Arithmetic"
+            injectionType = "Arithmetic";
         } else if (ptr_err && injectPointer(inst, faultIdx)) {
             ret = true;
             injectionType = "Pointer";
@@ -1262,6 +1262,7 @@ void DynamicFaults::injectFaults(std::vector<Instruction*>& ilist, unsigned& fau
                 errs() << File << ":" << Line << "\n";
             } else {
                 errs() << *inst << '\n';
+            }
         }
     }/*end for*/
 }
