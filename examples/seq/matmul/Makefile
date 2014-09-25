@@ -9,7 +9,7 @@ CC=gcc
 CFLAGS = -g
 
 FILIB= -L$(FLIPIT_PATH)/lib -lcorrupt
-FIPASS= $(LLVM_BUILD_PATH)/lib/Transforms/FlipIt/Debug+Asserts/faults.so
+FIPASS= $(LLVM_BUILD_PATH)/Debug+Asserts/lib/faults.so
 LFLAGS = $(FILIB)
 
 long: matmul.o main.o

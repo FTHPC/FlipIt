@@ -11,19 +11,17 @@
 # Name: flipit-cc
 #
 # Description: Wrapper script to hide the process of compilation for 
-#				fault injection. Use it like you would a regular 
-#				compiler.
+#		fault injection. Use it like you would a regular 
+#		compiler.
 #
 #####################################################################
 import sys
 import os
-print os.system('pwd')
 import glob
 
 # If there is a flipit-cc config file in the current 
 # directory, use that if not use the one in the flipit directory
 if os.path.isfile("config.py"):
-	print os.getcwd()
 	sys.path.insert(0, os.getcwd())
 from config import *
 
@@ -56,7 +54,7 @@ if (shouldInject(sys.argv, notInject)):
 
 	step1 = "clang -emit-llvm "
 	step2 = "llvm-link " + FLIPIT_PATH +"/src/corrupt/corrupt.bc "
-	step3 = "opt -load "+ LLVM_BUILD_PATH + "/lib/Transforms/FlipIt/Debug+Asserts/faults.so -DynamicFaults" \
+	step3 = "opt -load "+ LLVM_BUILD_PATH + "/Debug+Asserts/lib/FlipIt.so -DynamicFaults" \
 			+ " -config " + config \
 			+ " -singleInj " + str(singleInj) \
 			+ " -prob " + str(prob) \
