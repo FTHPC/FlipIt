@@ -31,14 +31,14 @@
 #include <cxxabi.h>
 #include <llvm/Pass.h>
 #include <llvm/ADT/ArrayRef.h>
-#include <llvm/IR/Function.h> 
-#include <llvm/IR/Module.h> 
-#include <llvm/IR/User.h> 
-#include <llvm/IR/IRBuilder.h>  
-#include <llvm/IR/Instructions.h> 
+#include <llvm/IR/Function.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/User.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Instructions.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/ADT/Statistic.h>
-#include <llvm/CodeGen/MachineOperand.h>
+ 
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Analysis/LoopPass.h>
 #include <llvm/Support/InstIterator.h>
@@ -52,11 +52,11 @@
 
 using namespace llvm;
 
-static cl::opt<string> func_list("funcList", cl::desc("Name(s) of the function(s) to be targeted"), cl::value_desc("func1 func2 func3"), cl::init(""), cl::ValueRequired);
+static cl::opt<string> funcList("funcList", cl::desc("Name(s) of the function(s) to be targeted"), cl::value_desc("func1 func2 func3"), cl::init(""), cl::ValueRequired);
 static cl::opt<string> configPath("config", cl::desc("Path to the FlipIt Config file"), cl::value_desc("/path/to/FlipIt.config"), cl::init("FlipIt.config"));
 static cl::opt<double> siteProb("prob", cl::desc("Probability that instrution is faulty"), cl::value_desc("Any value [0,1)"), cl::init(1e-8), cl::ValueRequired);
 static cl::opt<int> byte_val("byte", cl::desc("Which byte to consider for fault injection"), cl::value_desc("-1-7"), cl::init(-1), cl::ValueRequired);
-static cl::opt<int> ijo("singleInj", cl::desc("Inject Error Only Once"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
+static cl::opt<int> singleInj("singleInj", cl::desc("Inject Error Only Once"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
 static cl::opt<bool> arith_err("arith", cl::desc("Inject Faults Into Arithmetic Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
 static cl::opt<bool> ctrl_err("ctrl", cl::desc("Inject Faults Into Control Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
 static cl::opt<bool> ptr_err("ptr", cl::desc("Inject Faults Into Pointer Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
@@ -71,13 +71,15 @@ namespace {
         public:
             static char ID; 
             DynamicFaults(); 
+            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err); 
             virtual bool runOnModule(Module &M);
+            bool runOnModuleCustom(Module &M, std::vector<Instruction*>* selectInsts = NULL);
 
 
 		private:
 
             void init(unsigned int& faultIdx, unsigned int& displayIdx);
-            void finalize(unsigned int& faultIdx, unsigned int& displayIdx);
+            bool finalize(unsigned int& faultIdx, unsigned int& displayIdx);
 			std::vector<std::string> splitAtSpace(std::string spltStr);
             int selectArgument(CallInst* callInst);
             void readConfig(string path);
@@ -100,7 +102,7 @@ namespace {
             bool inject_GetElementPtr_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI, BasicBlock* BB);
 
             void cacheFunctions(Module::FunctionListType &functionList);
-            void enumerateSites(std::vector<Instruction*>& ilist, Function *F, unsigned& displayIdx);
+            void enumerateSites(std::vector<Instruction*>& ilist, Function *F, unsigned& displayIdx, std::vector<Instruction*>* selectInsts);
             void injectFaults(std::vector<Instruction*>& ilist, unsigned& faultIdx);
 
             Value* func_corruptIntData_8bit;
@@ -123,6 +125,7 @@ namespace {
             string comment;
             string injectionType;
             std::stringstream strStream;
+            unsigned int oldFaultIdx;
 
     };/*end class definition*/
 }/*end namespace*/
