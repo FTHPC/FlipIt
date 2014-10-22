@@ -13,6 +13,9 @@
 /*                                                                                             */
 /***********************************************************************************************/
 
+#ifndef FAULTS_H
+#define FAULTS_H
+
 #include <sstream>
 #include <algorithm>
 #include <iterator>
@@ -50,8 +53,13 @@
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/TypeBuilder.h>
 
+
+
+
 using namespace llvm;
 
+
+#ifdef COMPILE_PASS
 static cl::opt<string> funcList("funcList", cl::desc("Name(s) of the function(s) to be targeted"), cl::value_desc("func1 func2 func3"), cl::init(""), cl::ValueRequired);
 static cl::opt<string> configPath("config", cl::desc("Path to the FlipIt Config file"), cl::value_desc("/path/to/FlipIt.config"), cl::init("FlipIt.config"));
 static cl::opt<double> siteProb("prob", cl::desc("Probability that instrution is faulty"), cl::value_desc("Any value [0,1)"), cl::init(1e-8), cl::ValueRequired);
@@ -60,16 +68,29 @@ static cl::opt<int> singleInj("singleInj", cl::desc("Inject Error Only Once"), c
 static cl::opt<bool> arith_err("arith", cl::desc("Inject Faults Into Arithmetic Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
 static cl::opt<bool> ctrl_err("ctrl", cl::desc("Inject Faults Into Control Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
 static cl::opt<bool> ptr_err("ptr", cl::desc("Inject Faults Into Pointer Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
-
+#endif
 
 
 
 
 /*Dynamic Fault Injection LLVM Pass*/
-namespace {
+namespace FlipIt {
+#ifdef COMPILE_PASS
     class DynamicFaults : public ModulePass {
+#else
+    class DynamicFaults {
+            string funcList;
+            string configPath;
+            double siteProb;
+            int byte_val;
+            int singleInj;
+            bool arith_err;
+            bool ctrl_err;
+            bool ptr_err;
+#endif
         public:
             static char ID; 
+
             DynamicFaults(); 
             DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err); 
             virtual bool runOnModule(Module &M);
@@ -129,5 +150,10 @@ namespace {
 
     };/*end class definition*/
 }/*end namespace*/
-char DynamicFaults::ID = 0;
-static RegisterPass<DynamicFaults> F0("DynamicFaults", "Dynamic Fault Injection emulating transient hardware error behavior");
+            
+#ifdef COMPILE_PASS
+char FlipIt::DynamicFaults::ID = 0;
+static RegisterPass<FlipIt::DynamicFaults> F0("FlipIt", "Dynamic Fault Injection emulating transient hardware error behavior");
+#endif
+
+#endif

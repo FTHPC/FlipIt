@@ -19,8 +19,19 @@
 #include <vector>
 #include <string>
 
-
-DynamicFaults::DynamicFaults() : ModulePass(ID) {
+#ifdef COMPILE_PASS
+FlipIt::DynamicFaults::DynamicFaults() : ModulePass(FlipIt::DynamicFaults::ID) {
+#else
+FlipIt::DynamicFaults::DynamicFaults() {
+    funcList = "";
+    configPath = "FlipIt.config";
+    siteProb = 1e-8;
+    byte_val = -1;
+    singleInj = 1;
+    arith_err = true;
+    ctrl_err = true;
+    ptr_err = true;
+#endif
     func_corruptIntData_8bit = NULL;
     func_corruptIntData_16bit = NULL;
     func_corruptIntData_32bit = NULL;
@@ -35,10 +46,16 @@ DynamicFaults::DynamicFaults() : ModulePass(ID) {
     func_corruptFloatAdr_32bit = NULL;
     func_corruptFloatAdr_64bit = NULL;
 }
-
-DynamicFaults::DynamicFaults(string _funcList, string _configPath, double _siteProb, 
+#ifdef COMPILE_PASS
+FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, double _siteProb, 
                             int _byte_val, int _singleInj, bool _arith_err, 
                             bool _ctrl_err, bool _ptr_err): ModulePass(ID)
+#else
+
+FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, double _siteProb, 
+                            int _byte_val, int _singleInj, bool _arith_err, 
+                            bool _ctrl_err, bool _ptr_err)
+#endif
 {
     funcList = _funcList;
     configPath =  _configPath;
@@ -65,11 +82,11 @@ DynamicFaults::DynamicFaults(string _funcList, string _configPath, double _siteP
 }
 
 
-bool DynamicFaults::runOnModule(Module &M) {
+bool FlipIt::DynamicFaults::runOnModule(Module &M) {
     return runOnModuleCustom(M, NULL);
 }
 
-bool DynamicFaults::runOnModuleCustom(Module &M, std::vector<Instruction*>* selectInsts) {
+bool FlipIt::DynamicFaults::runOnModuleCustom(Module &M, std::vector<Instruction*>* selectInsts) {
     srand(time(NULL));
     if (byte_val < -1 || byte_val > 7)
         byte_val = rand() % 8;
@@ -151,7 +168,7 @@ bool DynamicFaults::runOnModuleCustom(Module &M, std::vector<Instruction*>* sele
     return finalize(faultIdx, displayIdx);
 }
 
-string DynamicFaults::demangle(string name)
+string FlipIt::DynamicFaults::demangle(string name)
 {
     int status;
     string demangled;
@@ -165,7 +182,7 @@ string DynamicFaults::demangle(string name)
     return demangled.find("(") == string::npos ? demangled : demangled.substr(0, demangled.find("("));
 }
 
-void  DynamicFaults::init(unsigned int& faultIdx, unsigned int& displayIdx) {
+void  FlipIt::DynamicFaults::init(unsigned int& faultIdx, unsigned int& displayIdx) {
     ifstream infile;
     string path(getenv("HOME"));
     path += "/.FlipItState";
@@ -183,7 +200,7 @@ void  DynamicFaults::init(unsigned int& faultIdx, unsigned int& displayIdx) {
     readConfig(configPath);
 }
 
-void DynamicFaults::readConfig(string path) {
+void FlipIt::DynamicFaults::readConfig(string path) {
     ifstream infile;
     string line;
     infile.open(path.c_str());
@@ -211,7 +228,7 @@ void DynamicFaults::readConfig(string path) {
 }
 
 
-bool  DynamicFaults::finalize(unsigned int& faultIdx, unsigned int& displayIdx) {
+bool  FlipIt::DynamicFaults::finalize(unsigned int& faultIdx, unsigned int& displayIdx) {
     ofstream outfile;
     string path(getenv("HOME"));
     path += "/.FlipItState";
@@ -227,7 +244,7 @@ bool  DynamicFaults::finalize(unsigned int& faultIdx, unsigned int& displayIdx) 
     return oldFaultIdx != faultIdx;
 }
 
-vector<string> DynamicFaults::splitAtSpace(string spltStr) {
+vector<string> FlipIt::DynamicFaults::splitAtSpace(string spltStr) {
     std::vector<std::string> strLst;
     std::istringstream isstr(spltStr);
     copy(std::istream_iterator<std::string>(isstr), std::istream_iterator<std::string>(),
@@ -236,7 +253,7 @@ vector<string> DynamicFaults::splitAtSpace(string spltStr) {
     return strLst;
 }
 
-double DynamicFaults::getInstProb(Instruction* I) {
+double FlipIt::DynamicFaults::getInstProb(Instruction* I) {
     /*First check if it is a call to a function listed in the config file*/
     if (CallInst *callInst = dyn_cast<CallInst>(I)) {
         if (callInst->getCalledFunction() == NULL) /* function pointers will be null */
@@ -253,7 +270,7 @@ double DynamicFaults::getInstProb(Instruction* I) {
     return instProbs.find(type) != instProbs.end() ? instProbs[type] : siteProb;
 }
 
-bool DynamicFaults::injectControl(Instruction* I, int faultIndex) {
+bool FlipIt::DynamicFaults::injectControl(Instruction* I, int faultIndex) {
     if (I == NULL)
         return false;
 
@@ -289,7 +306,7 @@ bool DynamicFaults::injectControl(Instruction* I, int faultIndex) {
 }
 
 
-bool DynamicFaults::injectArithmetic(Instruction* I, int faultIndex) {
+bool FlipIt::DynamicFaults::injectArithmetic(Instruction* I, int faultIndex) {
     if (I == NULL)
         return false;
 
@@ -323,7 +340,7 @@ bool DynamicFaults::injectArithmetic(Instruction* I, int faultIndex) {
 }
 
 
-bool DynamicFaults::injectPointer(Instruction* I, int faultIndex) {
+bool FlipIt::DynamicFaults::injectPointer(Instruction* I, int faultIndex) {
     if (I == NULL)
         return false;
 
@@ -357,7 +374,7 @@ bool DynamicFaults::injectPointer(Instruction* I, int faultIndex) {
     return false;
 }
 
-bool DynamicFaults::injectCall(Instruction* I, int faultIndex) {
+bool FlipIt::DynamicFaults::injectCall(Instruction* I, int faultIndex) {
     if (I == NULL)
         return false;
 
@@ -383,7 +400,7 @@ bool DynamicFaults::injectCall(Instruction* I, int faultIndex) {
     return false;
 }
 
-bool DynamicFaults::inject_Store_Data(Instruction* I, std::vector<Value*> args, CallInst* CallI) {
+bool FlipIt::DynamicFaults::inject_Store_Data(Instruction* I, std::vector<Value*> args, CallInst* CallI) {
     args.push_back(I->getOperand(0)); // value stored
 
     /*Integer Data*/
@@ -425,7 +442,7 @@ bool DynamicFaults::inject_Store_Data(Instruction* I, std::vector<Value*> args, 
     return true;
 }
 
-bool DynamicFaults::inject_Compare(Instruction* I, std::vector<Value*> args, CallInst* CallI) {
+bool FlipIt::DynamicFaults::inject_Compare(Instruction* I, std::vector<Value*> args, CallInst* CallI) {
     /* select a random arg to corrupt because corrupting the result will yeild a
     50% chance of branching incorrectly */
     unsigned int opPos = rand() % 2;
@@ -507,7 +524,7 @@ bool DynamicFaults::inject_Compare(Instruction* I, std::vector<Value*> args, Cal
 }
 
 
-bool DynamicFaults::inject_Generic(Instruction* I, std::vector<Value*> args, CallInst* CallI,
+bool FlipIt::DynamicFaults::inject_Generic(Instruction* I, std::vector<Value*> args, CallInst* CallI,
                                    BasicBlock* BB) {
     Instruction* INext = NULL;
     BasicBlock::iterator BI = *I;
@@ -609,7 +626,7 @@ bool DynamicFaults::inject_Generic(Instruction* I, std::vector<Value*> args, Cal
 }
 
 
-bool DynamicFaults::inject_Store_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI) {
+bool FlipIt::DynamicFaults::inject_Store_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI) {
 
     PtrToIntInst* p2iI = NULL;
     IntToPtrInst* i2pI = NULL;
@@ -686,7 +703,7 @@ bool DynamicFaults::inject_Store_Ptr(Instruction* I, std::vector<Value*> args, C
     return true;
 }
 
-bool DynamicFaults::inject_Load_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB) {
+bool FlipIt::DynamicFaults::inject_Load_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB) {
 
     Instruction* INext;
     PtrToIntInst* p2iI = NULL;
@@ -880,7 +897,7 @@ bool DynamicFaults::inject_Load_Ptr(Instruction* I, std::vector<Value*> args, Ca
     return true;
 }
 
-bool DynamicFaults::inject_Alloc_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB) {
+bool FlipIt::DynamicFaults::inject_Alloc_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB) {
 
     Instruction* INext = NULL;
     PtrToIntInst* p2iI = NULL;
@@ -1002,7 +1019,7 @@ bool DynamicFaults::inject_Alloc_Ptr(Instruction* I, std::vector<Value*> args, C
     return true;
 }
 
-int DynamicFaults::selectArgument(CallInst* callInst) {
+int FlipIt::DynamicFaults::selectArgument(CallInst* callInst) {
     int arg = -1;
     int possArgLen = callInst->getNumArgOperands();
     std::vector<int> argPos;
@@ -1062,7 +1079,7 @@ int DynamicFaults::selectArgument(CallInst* callInst) {
     return arg;
 }
 
-bool DynamicFaults::inject_Call(Instruction* I, std::vector<Value*> args, CallInst* CallI,
+bool FlipIt::DynamicFaults::inject_Call(Instruction* I, std::vector<Value*> args, CallInst* CallI,
                                 BasicBlock::iterator BI,  BasicBlock* BB) {
     PtrToIntInst* p2iI = NULL;
     IntToPtrInst* i2pI = NULL;
@@ -1138,7 +1155,7 @@ bool DynamicFaults::inject_Call(Instruction* I, std::vector<Value*> args, CallIn
     return true;
 }
 
-bool DynamicFaults::inject_GetElementPtr_Ptr(Instruction* I, std::vector<Value*> args,
+bool FlipIt::DynamicFaults::inject_GetElementPtr_Ptr(Instruction* I, std::vector<Value*> args,
                                              CallInst* CallI, BasicBlock::iterator BI,
                                              BasicBlock* BB) {
     Instruction* INext = NULL;
@@ -1204,7 +1221,7 @@ bool DynamicFaults::inject_GetElementPtr_Ptr(Instruction* I, std::vector<Value*>
 }
 
 
-void DynamicFaults::cacheFunctions(Module::FunctionListType &functionList) {
+void FlipIt::DynamicFaults::cacheFunctions(Module::FunctionListType &functionList) {
     StringRef lstr;
     for (Module::iterator it = functionList.begin(); it != functionList.end(); ++it) {
         lstr = it->getName();
@@ -1247,7 +1264,7 @@ void DynamicFaults::cacheFunctions(Module::FunctionListType &functionList) {
         && func_corruptFloatAdr_64bit != NULL);
 }
 
-void DynamicFaults::enumerateSites(std::vector<Instruction*>& ilist, Function *F,
+void FlipIt::DynamicFaults::enumerateSites(std::vector<Instruction*>& ilist, Function *F,
                                    unsigned& displayIdx, std::vector<Instruction*>* selectInsts) {
     for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; I++) {
         Value *in = &(*I);
@@ -1262,11 +1279,7 @@ void DynamicFaults::enumerateSites(std::vector<Instruction*>& ilist, Function *F
                     errs() << "\n";
                     continue;
                 }
-                // errs() << selectInsts ;
-                // errs() << "\n\n#### is not null\n";
             }
-            // else
-              //  errs() << "is null 9879879\n";
             ilist.push_back(&*I);
             errs()  << "; Fault Index: " << displayIdx++;
         }
@@ -1274,7 +1287,7 @@ void DynamicFaults::enumerateSites(std::vector<Instruction*>& ilist, Function *F
     }
 }
 
-void DynamicFaults::injectFaults(std::vector<Instruction*>& ilist, unsigned& faultIdx) {
+void FlipIt::DynamicFaults::injectFaults(std::vector<Instruction*>& ilist, unsigned& faultIdx) {
     bool ret;
 
     Instruction* inst;

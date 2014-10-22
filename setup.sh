@@ -22,6 +22,7 @@
 echo "Copying files..."
 mkdir $LLVM_BUILD_PATH/lib/Transforms/FlipIt/
 ln -s -f $FLIPIT_PATH/src/pass/Makefile $LLVM_BUILD_PATH/lib/Transforms/FlipIt/Makefile
+ln -s -f $FLIPIT_PATH/src/pass/Makefile-Lib $LLVM_BUILD_PATH/lib/Transforms/FlipIt/Makefile-Lib
 ln -s -f $FLIPIT_PATH/src/pass/faults.cpp $LLVM_BUILD_PATH/lib/Transforms/FlipIt/faults.cpp
 ln -s -f $FLIPIT_PATH/src/pass/faults.h $LLVM_BUILD_PATH/lib/Transforms/FlipIt/faults.h
 ln -s -f $FLIPIT_PATH/scripts/createPass.sh $LLVM_BUILD_PATH/lib/Transforms/FlipIt/createPass.sh

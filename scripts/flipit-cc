@@ -54,7 +54,7 @@ if (shouldInject(sys.argv, notInject)):
 
 	step1 = "clang -emit-llvm "
 	step2 = "llvm-link " + FLIPIT_PATH +"/src/corrupt/corrupt.bc "
-	step3 = "opt -load "+ LLVM_BUILD_PATH + "/Debug+Asserts/lib/FlipIt.so -DynamicFaults" \
+	step3 = "opt -load "+ LLVM_BUILD_PATH + "/Debug+Asserts/lib/FlipIt.so -FlipIt " \
 			+ " -config " + config \
 			+ " -singleInj " + str(singleInj) \
 			+ " -prob " + str(prob) \

@@ -16,6 +16,13 @@
 #####################################################################
 
 make clean
-make
-g++ -shared ./Debug+Asserts/faults.o -o ./Debug+Asserts/faults.so
+
+echo "
+Making Compiler Pass Library:"
+make -f Makefile-Lib
+rm -rf Debug+Asserts
+
+echo "
+Making Compiler Pass:"
+make -f Makefile
 

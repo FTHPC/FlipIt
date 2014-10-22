@@ -1,4 +1,4 @@
-# Makefile for faults pass
+# Makefile for faults pass library
 
 #####################################################################
 #
@@ -11,13 +11,14 @@
 LEVEL = ../../../
 
 # Name of the library to build
-LIBRARYNAME = FlipIt
+LIBRARYNAME = libFlipIt
 
 
 # Make the shared library become a loadable module so the tools can
 # dlopen/dlsym on the resulting library.
-LOADABLE_MODULE = 1
+LOADABLE_MODULE = 0
+SHARED_LIBRARY = 1
+BUILD_ARCHIVE = 1
 
 # Include the makefile implementation stuff
 include $(LEVEL)/Makefile.common
-CXX.Flags += -DCOMPILE_PASS
