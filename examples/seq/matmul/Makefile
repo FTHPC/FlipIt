@@ -9,7 +9,7 @@ CC=gcc
 CFLAGS = -g
 
 FILIB= -L$(FLIPIT_PATH)/lib -lcorrupt
-FIPASS= $(LLVM_BUILD_PATH)/Debug+Asserts/lib/faults.so
+FIPASS= $(LLVM_BUILD_PATH)/Debug+Asserts/lib/FlipIt.so
 LFLAGS = $(FILIB)
 
 long: matmul.o main.o
@@ -18,7 +18,7 @@ long: matmul.o main.o
 matmul.o: matmul.c
 	clang $(CFLAGS) -emit-llvm matmul.c  -c -o matmul.bc 
 	llvm-link $(FLIPIT_PATH)/src/corrupt/corrupt.bc matmul.bc  -o crpt_matmul.bc
-	opt -load $(FIPASS) -DynamicFaults -config FlipIt.config -singleInj 1 -prob 1e-8 -byte -1 -arith 1 -ctrl 1 -ptr 1 -funcList "" < crpt_matmul.bc > final.bc 2> matmul.LLVM.txt
+	opt -load $(FIPASS) -FlipIt -config FlipIt.config -singleInj 1 -prob 1e-8 -byte -1 -arith 1 -ctrl 1 -ptr 1 -funcList "" < crpt_matmul.bc > final.bc 2> matmul.LLVM.txt
 	clang  -c final.bc -o matmul.o
 
 main.o: main.c
