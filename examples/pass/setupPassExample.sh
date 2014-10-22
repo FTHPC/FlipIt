@@ -18,6 +18,8 @@
 #####################################################################
 
 cp -r Foo   $LLVM_BUILD_PATH/lib/Transforms/
+cp -r Foo   $LLVM_REPO_PATH/lib/Transforms/
+$LLVM_REPO_PATH/configure
 cd $LLVM_BUILD_PATH/lib/Transforms/Foo
 ./createPass.sh
 
