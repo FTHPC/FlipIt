@@ -39,7 +39,7 @@ void FLIPIT_SetInjector(int state);
 void FLIPIT_SetRankInject(int state);
 void FLIPIT_SetFaultProbability(double(faultProb)());
 void FLIPIT_SetCustomLogger(void (customLogger)(FILE*));
-
+void FLIPIT_CountdownTimer(unsigned long numInstructions);
 
 /* corrupt the data */
 char       corruptIntData_8bit    (int fault_index, int inject_once, double prob, int byte_val, char inst_data);

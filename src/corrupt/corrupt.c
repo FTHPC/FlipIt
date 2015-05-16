@@ -23,7 +23,7 @@ static int FLIPIT_State = 0;
 /*fault injection count*/
 static int FLIPIT_InjectionCount = 0;
 static unsigned long FLIPIT_Attempts = 0;
-
+static unsigned long FLIPIT_InjCountdown = 0;
 
 /*Fault Injection Statistics*/
 static unsigned long* FLIPIT_Histogram;
@@ -40,13 +40,15 @@ static int FLIPIT_NumFaultSites = -1;
 
 static unsigned long FLIPIT_Attempts;
 static void (*FLIPIT_CustomLogger)(FILE*) = NULL;
+static void (*FLIPIT_CountdownCustomLogger)(FILE*) = NULL;
 static double (*FLIPIT_FaultProb)() = NULL;
 
 static void flipit_parseArgs(int argc, char** argv);
 static int flipit_shouldInject(int fault_index, int inject_once);
 static void flipit_print_injectedErr(char* type, unsigned int bPos, int fault_index, double prob,
                                      double p);
-
+static double flipit_countdown();
+static void flipit_countdownLogger(FILE*);
 
 /***********************************************************************************************/
 /* The functions below are the functions thaat should be called by a user of FlipIt            */
@@ -121,9 +123,22 @@ void FLIPIT_SetFaultProbability(double (prob)()) {
 
 
 void FLIPIT_SetCustomLogger(void (logger)(FILE*)) {
-    FLIPIT_CustomLogger = logger;
+    if (FLIPIT_InjCountdown != 0) {
+        FLIPIT_CountdownCustomLogger = logger;
+        FLIPIT_CustomLogger = flipit_countdownLogger;
+    }
+    else {
+        FLIPIT_CustomLogger = logger;
+    }
 }
 
+void FLIPIT_CountdownTimer(unsigned long numInstructions) {
+    FLIPIT_InjCountdown = numInstructions;
+    FLIPIT_SetFaultProbability(flipit_countdown);
+    
+    FLIPIT_CountdownCustomLogger = FLIPIT_CustomLogger;
+    FLIPIT_CustomLogger = flipit_countdownLogger;
+}
 
 /***********************************************************************************************/
 /* The functions below this are used internally by FlipIt                                      */
@@ -208,14 +223,14 @@ static int flipit_shouldInject(int fault_index, int inject_once) {
 
 static void flipit_print_injectedErr(char* type, unsigned int bPos, int fault_index, double prob,
                                      double p) {
-    printf("\n/*********************************Start**************************************/"
-            "\nSuccessfully injected %s error!!\nRank: %d"
-            "\nTotal # faults injected: %d" 
-            "\nBit position is: %u"
-            "\nIndex of the fault site: %d"
-            "\nFault site probability: %e"
-            "\nChosen random probability is: %e" 
-            "\nAttempts since last injection: %lu", type, FLIPIT_Rank, FLIPIT_InjectionCount,
+    printf("\n/*********************************Start**************************************/\n"
+            "\nSuccessfully injected %s error!!\nRank: %d\n"
+            "Total # faults injected: %d\n" 
+            "Bit position is: %u\n"
+            "Index of the fault site: %d\n"
+            "Fault site probability: %e\n"
+            "Chosen random probability is: %e\n" 
+            "Attempts since last injection: %lu\n", type, FLIPIT_Rank, FLIPIT_InjectionCount,
                                                     bPos, fault_index, 
             prob, p, FLIPIT_Attempts);   
     if (FLIPIT_CustomLogger != NULL)
@@ -223,6 +238,15 @@ static void flipit_print_injectedErr(char* type, unsigned int bPos, int fault_in
     printf("\n/*********************************End**************************************/\n");
 }
 
+static double flipit_countdown() {
+    return (double) --FLIPIT_InjCountdown;
+}
+
+static void flipit_countdownLogger(FILE* outfile) {
+    if (FLIPIT_CountdownCustomLogger != NULL)
+        FLIPIT_CountdownCustomLogger(outfile);
+    FLIPIT_InjCountdown = FLIPIT_Attempts;
+}
 
 /***********************************************************************************************/
 /* The functions below this are inserted by the compiler pass to flip a bit                    */
