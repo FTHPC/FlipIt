@@ -292,16 +292,20 @@ bool FlipIt::DynamicFaults::injectControl(Instruction* I, int faultIndex) {
 
     /* Choose a fault site in CmpInst and insert Corrupt function call */
     if (isa<CmpInst>(I))
+    {
+        injectionType = "Control-Branch";
         return inject_Compare(I, args, CallI);
-
+    }
 
     /* check to see if instruction modifies a looping variable such as i++
         if so we need to inject into it and mark the injection type 'control' */
     if (!isa<CmpInst>(I) && !isa<StoreInst>(I))
         if (I->getName().str().find("indvars") == 0
             || I->getName().str().substr(0, 3) == "inc")
+        {
+            injectionType = "Control-Loop";
             return inject_Generic(I, args, CallI, BB);
-
+        }
     return false;
 }
 
@@ -1058,7 +1062,7 @@ int FlipIt::DynamicFaults::selectArgument(CallInst* callInst) {
             if ( v->getName().str().find("indvars") == 0
                 || v->getName().str().substr(0, 3) == "inc") {
                 arg = a;
-                injectionType = "Control";
+                injectionType = "Control-Loop";
                 argFound = true;
             }
         } else if (arith_err && (callInst->getArgOperand(a)->getType()->isIntegerTy()
@@ -1300,7 +1304,7 @@ void FlipIt::DynamicFaults::injectFaults(std::vector<Instruction*>& ilist, unsig
 
         if (ctrl_err && injectControl(inst, faultIdx)) {
             ret = true;
-            injectionType = "Control";
+            //injectionType = "Control";
         } else if (arith_err && injectArithmetic(inst, faultIdx)) {
             ret = true;
             injectionType = "Arithmetic";
