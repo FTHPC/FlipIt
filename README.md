@@ -7,7 +7,7 @@ To cite:
 ```
 @inproceedings{CalhounOlsonSnir:2014:FlipIt,
   author    = {Jon Calhoun and Luke Olson and Marc Snir},
-  title     = {MPI Trace Compression using Event Flow Graphs},
+  title     = {{FlipIt: An LLVM Based Fault Injector for HPC}},
   booktitle = {Proceedings of the 20th International Euro-Par Conference on Parallel Processing (Euro-Par '14)},
   year      = {2014},
 }
