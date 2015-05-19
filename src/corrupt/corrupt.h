@@ -41,6 +41,15 @@ void FLIPIT_SetFaultProbability(double(faultProb)());
 void FLIPIT_SetCustomLogger(void (customLogger)(FILE*));
 void FLIPIT_CountdownTimer(unsigned long numInstructions);
 
+/* FORTRAN VERSIONS (ex: CALL flipit_init_ftn(myrank, argc, argv, seed) */
+int flipit_init_ftn_(int* myRank, int* argc, char*** argv, unsigned long long* seed);
+int flipit_finalize_ftn_(char** filename);
+int flipit_setinjector_ftn_(int* state);
+int flipit_setrankinject_ftn_(int* state);
+/* void flipit_setfaultprobability_ftn_(double(faultProb)()); */
+/* void flipit_setcustomlogger_ftn_(void (customLogger)(FILE*)); */
+int flipit_countdowntimer_ftn_(unsigned long* numInstructions);
+
 /* corrupt the data */
 char       corruptIntData_8bit    (int fault_index, int inject_once, double prob, int byte_val, char inst_data);
 short      corruptIntData_16bit   (int fault_index, int inject_once, double prob, int byte_val, short inst_data);

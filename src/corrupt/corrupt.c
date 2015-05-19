@@ -51,7 +51,7 @@ static double flipit_countdown();
 static void flipit_countdownLogger(FILE*);
 
 /***********************************************************************************************/
-/* The functions below are the functions thaat should be called by a user of FlipIt            */
+/* The functions below are the functions that should be called by a user of FlipIt             */
 /***********************************************************************************************/
 
 void FLIPIT_Init(int myRank, int argc, char** argv, unsigned long long seed) {
@@ -139,6 +139,47 @@ void FLIPIT_CountdownTimer(unsigned long numInstructions) {
     FLIPIT_CountdownCustomLogger = FLIPIT_CustomLogger;
     FLIPIT_CustomLogger = flipit_countdownLogger;
 }
+
+
+/***********************************************************************************************/
+/* User callable function for FORTRAN wrapper                                              */
+/***********************************************************************************************/
+int flipit_init_ftn_(int* myRank, int* argc, char*** argv, unsigned long long* seed) {
+    if (argv == NULL)
+        FLIPIT_Init(*myRank, 0, NULL, *seed); 
+    else
+        FLIPIT_Init(*myRank, *argc, *argv, *seed);
+    
+    return 0;
+}
+
+int flipit_finalize_ftn_(char** filename) {
+    if (filename != NULL)
+        FLIPIT_Finalize(*filename);
+    else
+        FLIPIT_Finalize(NULL);
+
+    return 0;
+}
+
+int flipit_setinjector_ftn_(int* state) {
+    FLIPIT_SetInjector(*state);
+    
+    return 0;
+}
+
+int flipit_setrankinject_ftn_(int* state) {
+    FLIPIT_SetRankInject(*state);
+    
+    return 0;
+}
+
+int flipit_countdowntimer_ftn_(unsigned long* numInstructions) {
+    FLIPIT_CountdownTimer(*numInstructions);
+    
+    return 0;
+}
+
 
 /***********************************************************************************************/
 /* The functions below this are used internally by FlipIt                                      */
