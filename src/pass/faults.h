@@ -99,18 +99,19 @@ namespace FlipIt {
 
 		private:
 
-            void init(unsigned int& faultIdx, unsigned int& displayIdx);
-            bool finalize(unsigned int& faultIdx, unsigned int& displayIdx);
+            void init();
+            bool finalize();
 			std::vector<std::string> splitAtSpace(std::string spltStr);
             int selectArgument(CallInst* callInst);
             void readConfig(string path);
             double getInstProb(Instruction* I);
-            string demangle(string name);
+            std::string demangle(std::string name);
+            bool viableFunction(std::string name, std::vector<std::string> flist);
 
-            bool injectControl(Instruction* I, int faultIndex);
-            bool injectArithmetic(Instruction* I, int faultIndex);
-            bool injectPointer(Instruction* I, int faultIndex);
-            bool injectCall(Instruction* I, int faultIndex);
+            bool injectControl(Instruction* I);
+            bool injectArithmetic(Instruction* I);
+            bool injectPointer(Instruction* I);
+            bool injectCall(Instruction* I);
 
 			bool inject_Store_Data(Instruction* I, std::vector<Value*> args, CallInst* CallI);
             bool inject_Compare(Instruction* I, std::vector<Value*> args, CallInst* CallI);
@@ -124,7 +125,7 @@ namespace FlipIt {
 
             void cacheFunctions(Module::FunctionListType &functionList);
             void enumerateSites(std::vector<Instruction*>& ilist, Function *F, unsigned& displayIdx, std::vector<Instruction*>* selectInsts);
-            void injectFaults(std::vector<Instruction*>& ilist, unsigned& faultIdx);
+            bool injectFault(Instruction* I);
 
             Value* func_corruptIntData_8bit;
             Value* func_corruptIntData_16bit;
@@ -147,6 +148,9 @@ namespace FlipIt {
             string injectionType;
             std::stringstream strStream;
             unsigned int oldFaultIdx;
+            unsigned int faultIdx;
+            unsigned int displayIdx;
+            unsigned int skipAmount;
 
     };/*end class definition*/
 }/*end namespace*/
