@@ -101,77 +101,61 @@ bool FlipIt::DynamicFaults::runOnModuleCustom(Module &M, std::vector<Instruction
 
 
     Module::FunctionListType &functionList = M.getFunctionList();
-    vector<string> flist = splitAtSpace(funcList);
-    unsigned faultIdx = 0;
-    unsigned displayIdx = 0;
+    vector<std::string> flist = splitAtSpace(funcList);
 
 
-    init(faultIdx, displayIdx);
+    init();
 
     /*Cache function references of the function defined in Corrupt.c to all inserting of
      *call instructions to them */
     cacheFunctions(functionList);
 
-    /*Cache instructions from all the targetable functions for fault injection in case the
-     * list of functions is not defined default to inject into all function inside the file. */
-    for (Module::iterator it = functionList.begin(); it != functionList.end(); ++it) {
-
+    /*Corrupt all instruction in vaible functions or in selectedList */
+    for (Module::iterator F = functionList.begin(); F != functionList.end(); ++F) {
         /* extract the pure function name, i.e. demangle if using c++*/
-        string cstr = demangle(it->getName().str());
-
-        if (cstr.find("corruptIntData_8bit") != std::string::npos  ||
-            cstr.find("corruptIntData_16bit") != std::string::npos   ||
-            cstr.find("corruptIntData_32bit") != std::string::npos   ||
-            cstr.find("corruptIntData_64bit") != std::string::npos   ||
-            cstr.find("corruptPtr2Int_64bit") != std::string::npos   ||
-            cstr.find("corruptFloatData_32bit") != std::string::npos ||
-            cstr.find("corruptFloatData_64bit") != std::string::npos ||
-            cstr.find("corruptIntAdr_8bit") != std::string::npos    ||
-            cstr.find("corruptIntAdr_16bit") != std::string::npos    ||
-            cstr.find("corruptIntAdr_32bit") != std::string::npos    ||
-            cstr.find("corruptIntAdr_64bit") != std::string::npos    ||
-            cstr.find("corruptFloatAdr_32bit") != std::string::npos  ||
-            cstr.find("corruptFloatAdr_64bit") != std::string::npos  ||
-            !cstr.compare("main"))
+        std::string cstr = demangle(F->getName().str());
+        if (!viableFunction(cstr, flist))
             continue;
-
-         if (funcProbs.find(cstr) != funcProbs.end())
-            if (funcProbs[cstr] == 0)
-                continue;
-
-        Function* F = NULL;
-        /*if the user defined function list is empty or the currently selected function is in the list of
-         * user defined function list then consider the function for fault injection*/
-        if (funcList.length() == 0 || std::find(flist.begin(), flist.end(), cstr) != flist.end()) {
-            F = it;
-        } else {
-            continue;
-        }
         if (F->begin() == F->end())
-            continue;
+            continue; 
 
-        /*Cache instruction references with in a function to be considered for fault injection*/
-        //if (ilist == NULL)
-        //    ilist = new std::vector<Instruction*>;
-        std::vector<Instruction*> ilist;
-        errs() << "\n\nFunction Name: " << cstr
-            << "\n------------------------------------------------------------------------------\n";
-        enumerateSites(ilist, F, displayIdx, selectInsts);
-
-
-        /*If the list of instruction to corrupt is not empty add code for fault injection */
-        if (!ilist.empty())
-            injectFaults(ilist, faultIdx);
+        inst_iterator I, E, Inext;
+        if (selectInsts == NULL) {
+            errs() << "\n\nFunction Name: " << cstr
+                << "\n------------------------------------------------------------------------------\n";
+            I = inst_begin(F);
+            E = inst_end(F);
+        }
+        /*else {
+            I = selectInsts->begin();
+            E = selectInsts->end();
+        } */
+        for ( ; I != E;) {
+        //for ( ; I != E; I++) {
+            Inext = I;
+            Inext++;
+            Value *in = &(*I);
+            if (in == NULL)
+                continue;
+            //errs()  << *I; 
+            if ( (isa<StoreInst>(in) || isa<LoadInst>(in) || isa<BinaryOperator>(in) || isa<CmpInst>(in)
+                || isa<CallInst>(in) || isa<AllocaInst>(in) || isa<GetElementPtrInst>(in)) ) {
+                injectFault(&(*I));
+                //    I++;
+                //errs()  << "; Fault Index: " << displayIdx++;
+            }
+            //errs() <<'\n';
+            while (I != Inext && I != E) { I++; }
+        }
     }/*end for*/
 
-
-    return finalize(faultIdx, displayIdx);
+    return finalize();
 }
 
-string FlipIt::DynamicFaults::demangle(string name)
+std::string FlipIt::DynamicFaults::demangle(std::string name)
 {
     int status;
-    string demangled;
+    std::string demangled;
     char* tmp = abi::__cxa_demangle(name.c_str(), NULL, NULL, &status);
     if (tmp == NULL)
         return name;
@@ -182,7 +166,38 @@ string FlipIt::DynamicFaults::demangle(string name)
     return demangled.find("(") == string::npos ? demangled : demangled.substr(0, demangled.find("("));
 }
 
-void  FlipIt::DynamicFaults::init(unsigned int& faultIdx, unsigned int& displayIdx) {
+bool FlipIt::DynamicFaults::viableFunction(std::string func, std::vector<std::string> flist) {
+   
+    /* verify func isn't a flipit runtime or a user specified
+    non-inject function */
+     
+    if (func.find("corruptIntData_8bit") != std::string::npos  ||
+        func.find("corruptIntData_16bit") != std::string::npos   ||
+        func.find("corruptIntData_32bit") != std::string::npos   ||
+        func.find("corruptIntData_64bit") != std::string::npos   ||
+        func.find("corruptPtr2Int_64bit") != std::string::npos   ||
+        func.find("corruptFloatData_32bit") != std::string::npos ||
+        func.find("corruptFloatData_64bit") != std::string::npos ||
+        func.find("corruptIntAdr_8bit") != std::string::npos    ||
+        func.find("corruptIntAdr_16bit") != std::string::npos    ||
+        func.find("corruptIntAdr_32bit") != std::string::npos    ||
+        func.find("corruptIntAdr_64bit") != std::string::npos    ||
+        func.find("corruptFloatAdr_32bit") != std::string::npos  ||
+        func.find("corruptFloatAdr_64bit") != std::string::npos  ||
+        !func.compare("main"))
+        return false; 
+
+     if (funcProbs.find(func) != funcProbs.end())
+        if (funcProbs[func] == 0)
+            return false;
+    
+    if (funcList.length() == 0 || std::find(flist.begin(), flist.end(), func) != flist.end()) 
+        return true;
+    return false;
+}
+void  FlipIt::DynamicFaults::init() {
+    faultIdx = 0;
+    displayIdx = 0;
     ifstream infile;
     string path(getenv("HOME"));
     path += "/.FlipItState";
@@ -228,7 +243,7 @@ void FlipIt::DynamicFaults::readConfig(string path) {
 }
 
 
-bool  FlipIt::DynamicFaults::finalize(unsigned int& faultIdx, unsigned int& displayIdx) {
+bool  FlipIt::DynamicFaults::finalize() {
     ofstream outfile;
     string path(getenv("HOME"));
     path += "/.FlipItState";
@@ -270,7 +285,7 @@ double FlipIt::DynamicFaults::getInstProb(Instruction* I) {
     return instProbs.find(type) != instProbs.end() ? instProbs[type] : siteProb;
 }
 
-bool FlipIt::DynamicFaults::injectControl(Instruction* I, int faultIndex) {
+bool FlipIt::DynamicFaults::injectControl(Instruction* I) {
     if (I == NULL)
         return false;
 
@@ -284,7 +299,7 @@ bool FlipIt::DynamicFaults::injectControl(Instruction* I, int faultIndex) {
     /* Build argument list before calling Corrupt function */
     CallInst* CallI = NULL;
     std::vector<Value*> args;
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIndex));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIdx));
     args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), singleInj));
     args.push_back(ConstantFP::get(Type::getDoubleTy(getGlobalContext()), getInstProb(I)));
     args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), byte_val));
@@ -310,7 +325,7 @@ bool FlipIt::DynamicFaults::injectControl(Instruction* I, int faultIndex) {
 }
 
 
-bool FlipIt::DynamicFaults::injectArithmetic(Instruction* I, int faultIndex) {
+bool FlipIt::DynamicFaults::injectArithmetic(Instruction* I) {
     if (I == NULL)
         return false;
 
@@ -324,7 +339,7 @@ bool FlipIt::DynamicFaults::injectArithmetic(Instruction* I, int faultIndex) {
     /* Build argument list before calling Corrupt function */
     CallInst* CallI = NULL;
     std::vector<Value*> args;
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIndex));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIdx));
     args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), singleInj));
     args.push_back(ConstantFP::get(Type::getDoubleTy(getGlobalContext()), getInstProb(I)));
     args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), byte_val));
@@ -344,14 +359,14 @@ bool FlipIt::DynamicFaults::injectArithmetic(Instruction* I, int faultIndex) {
 }
 
 
-bool FlipIt::DynamicFaults::injectPointer(Instruction* I, int faultIndex) {
+bool FlipIt::DynamicFaults::injectPointer(Instruction* I) {
     if (I == NULL)
         return false;
 
     CallInst* CallI = NULL;
     /*Build argument list before calling Corrupt function*/
     std::vector<Value*> args;
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIndex));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIdx));
     args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), singleInj));
     args.push_back(ConstantFP::get(Type::getDoubleTy(getGlobalContext()), getInstProb(I)));
     args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), byte_val));
@@ -378,14 +393,14 @@ bool FlipIt::DynamicFaults::injectPointer(Instruction* I, int faultIndex) {
     return false;
 }
 
-bool FlipIt::DynamicFaults::injectCall(Instruction* I, int faultIndex) {
+bool FlipIt::DynamicFaults::injectCall(Instruction* I) {
     if (I == NULL)
         return false;
 
     CallInst* CallI = NULL;
     /*Build argument list before calling Corrupt function*/
     std::vector<Value*> args;
-    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIndex));
+    args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIdx));
     args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), singleInj));
     args.push_back(ConstantFP::get(Type::getDoubleTy(getGlobalContext()), getInstProb(I)));
     args.push_back(ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), byte_val));
@@ -442,6 +457,7 @@ bool FlipIt::DynamicFaults::inject_Store_Data(Instruction* I, std::vector<Value*
         Value* corruptVal = &(*CallI);
         I->setOperand(0, corruptVal);
         comment = "Value";
+        skipAmount = 0;
     }
     return true;
 }
@@ -523,6 +539,7 @@ bool FlipIt::DynamicFaults::inject_Compare(Instruction* I, std::vector<Value*> a
         strStream << "Operand # " << opPos;
         comment = strStream.str();
         strStream.str("");
+        skipAmount = 0;
     }
     return true;
 }
@@ -625,6 +642,7 @@ bool FlipIt::DynamicFaults::inject_Generic(Instruction* I, std::vector<Value*> a
         INext = &*BINext;
         INext->setOperand(4, I); // hard coded. If like others, it says we have an extra argument
         comment = "Result";
+        skipAmount = 1;
     }
     return true;
 }
@@ -1291,48 +1309,42 @@ void FlipIt::DynamicFaults::enumerateSites(std::vector<Instruction*>& ilist, Fun
     }
 }
 
-void FlipIt::DynamicFaults::injectFaults(std::vector<Instruction*>& ilist, unsigned& faultIdx) {
-    bool ret;
-
-    Instruction* inst;
-    for (std::vector<Instruction*>::iterator its = ilist.begin();
-         its != ilist.end(); its++, faultIdx++) {
-        inst = *its;
-        comment = "";
-        ret = false;
-        injectionType = "";
-
-        if (ctrl_err && injectControl(inst, faultIdx)) {
-            ret = true;
-            //injectionType = "Control";
-        } else if (arith_err && injectArithmetic(inst, faultIdx)) {
-            ret = true;
-            injectionType = "Arithmetic";
-        } else if (ptr_err && injectPointer(inst, faultIdx)) {
-            ret = true;
-            injectionType = "Pointer";
-        } else if ( (ctrl_err || arith_err || ptr_err) && injectCall(inst, faultIdx) ) {
-            ret = true;
+bool FlipIt::DynamicFaults::injectFault(Instruction* I) {
+    bool ret = false;
+    comment = "";
+    injectionType = "";
+    skipAmount = 0;
+    if (ctrl_err && injectControl(I)) {
+        ret = true;
+        //injectionType = "Control";
+    } else if (arith_err && injectArithmetic(I)) {
+        ret = true;
+        injectionType = "Arithmetic";
+    } else if (ptr_err && injectPointer(I)) {
+        ret = true;
+        injectionType = "Pointer";
+    } else if ( (ctrl_err || arith_err || ptr_err) && injectCall(I) ) {
+        ret = true;
+    }
+    /*
+    else {
+        errs() << "Warning: Didn't injection into \"" << *inst << "\"\n";
+    }
+    */
+    if (ret) {
+        // Site #,   injection type, comment, inst
+        errs() << '#' << faultIdx++ << '\t' << injectionType << '\t' << comment  << "\t";
+        if (MDNode *N = I->getMetadata("dbg")) {
+            DILocation Loc(N);
+            unsigned Line = Loc.getLineNumber();
+            StringRef File = Loc.getFilename();
+            // StringRef Dir = Loc.getDirectory();
+            errs() << File << ":" << Line << "\n";
+        } else {
+            errs() << *I << '\n';
         }
-        /*
-        else {
-            errs() << "Warning: Didn't injection into \"" << *inst << "\"\n";
-        }
-        */
-        if (ret) {
-            // Site #,   injection type, comment, inst
-            errs() << '#' << faultIdx << '\t' << injectionType << '\t' << comment  << "\t";
-            if (MDNode *N = inst->getMetadata("dbg")) {
-                DILocation Loc(N);
-                unsigned Line = Loc.getLineNumber();
-                StringRef File = Loc.getFilename();
-                // StringRef Dir = Loc.getDirectory();
-                errs() << File << ":" << Line << "\n";
-            } else {
-                errs() << *inst << '\n';
-            }
-        }
-    }/*end for*/
+    }
+    return ret;
 }
 /****************************************************************************************/
 
