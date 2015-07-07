@@ -91,11 +91,20 @@ namespace FlipIt {
         public:
             static char ID; 
 
+#ifdef COMPILE_PASS
             DynamicFaults(); 
-            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err); 
-            virtual bool runOnModule(Module &M);
-            bool runOnModuleCustom(Module &M, std::vector<Instruction*>* selectInsts = NULL);
+            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err, Module* M); 
+#else
+            DynamicFaults(Module* M); 
+            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err, Module* M); 
 
+#endif
+            //~DynamicFaults()
+            //    { finalize(); }
+            virtual ~DynamicFaults()
+                { finalize(); }
+            virtual bool runOnModule(Module &M);
+            bool corruptInstruction(Instruction* I);
 
 		private:
 
@@ -124,7 +133,6 @@ namespace FlipIt {
             bool inject_GetElementPtr_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI, BasicBlock* BB);
 
             void cacheFunctions(Module::FunctionListType &functionList);
-            void enumerateSites(std::vector<Instruction*>& ilist, Function *F, unsigned& displayIdx, std::vector<Instruction*>* selectInsts);
             bool injectFault(Instruction* I);
 
             Value* func_corruptIntData_8bit;

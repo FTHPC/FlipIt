@@ -15,14 +15,14 @@
 /***********************************************************************************************/
 
 #include "./faults.h"
-#include <algorithm>
-#include <vector>
-#include <string>
+//#include <algorithm>
+//#include <vector>
+//#include <string>
 
 #ifdef COMPILE_PASS
 FlipIt::DynamicFaults::DynamicFaults() : ModulePass(FlipIt::DynamicFaults::ID) {
 #else
-FlipIt::DynamicFaults::DynamicFaults() {
+FlipIt::DynamicFaults::DynamicFaults(Module* M) {
     funcList = "";
     configPath = "FlipIt.config";
     siteProb = 1e-8;
@@ -31,6 +31,10 @@ FlipIt::DynamicFaults::DynamicFaults() {
     arith_err = true;
     ctrl_err = true;
     ptr_err = true;
+    
+    Module::FunctionListType &functionList = M->getFunctionList();
+    init();
+    cacheFunctions(functionList);
 #endif
     func_corruptIntData_8bit = NULL;
     func_corruptIntData_16bit = NULL;
@@ -45,16 +49,18 @@ FlipIt::DynamicFaults::DynamicFaults() {
     func_corruptIntAdr_64bit = NULL;
     func_corruptFloatAdr_32bit = NULL;
     func_corruptFloatAdr_64bit = NULL;
+    
+
 }
 #ifdef COMPILE_PASS
 FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, double _siteProb, 
                             int _byte_val, int _singleInj, bool _arith_err, 
-                            bool _ctrl_err, bool _ptr_err): ModulePass(ID)
+                            bool _ctrl_err, bool _ptr_err, Module* M): ModulePass(ID)
 #else
 
 FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, double _siteProb, 
                             int _byte_val, int _singleInj, bool _arith_err, 
-                            bool _ctrl_err, bool _ptr_err)
+                            bool _ctrl_err, bool _ptr_err, Module* M)
 #endif
 {
     funcList = _funcList;
@@ -79,14 +85,16 @@ FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, doubl
     func_corruptIntAdr_64bit = NULL;
     func_corruptFloatAdr_32bit = NULL;
     func_corruptFloatAdr_64bit = NULL;
+    
+#ifndef COMPILE_PASS
+    Module::FunctionListType &functionList = M->getFunctionList();
+    init();
+    cacheFunctions(functionList);
+#endif
 }
 
 
 bool FlipIt::DynamicFaults::runOnModule(Module &M) {
-    return runOnModuleCustom(M, NULL);
-}
-
-bool FlipIt::DynamicFaults::runOnModuleCustom(Module &M, std::vector<Instruction*>* selectInsts) {
     srand(time(NULL));
     if (byte_val < -1 || byte_val > 7)
         byte_val = rand() % 8;
@@ -112,39 +120,30 @@ bool FlipIt::DynamicFaults::runOnModuleCustom(Module &M, std::vector<Instruction
 
     /*Corrupt all instruction in vaible functions or in selectedList */
     for (Module::iterator F = functionList.begin(); F != functionList.end(); ++F) {
+        
         /* extract the pure function name, i.e. demangle if using c++*/
         std::string cstr = demangle(F->getName().str());
-        if (!viableFunction(cstr, flist))
+        if (F->begin() == F->end() || !viableFunction(cstr, flist))
             continue;
-        if (F->begin() == F->end())
-            continue; 
 
         inst_iterator I, E, Inext;
-        if (selectInsts == NULL) {
-            errs() << "\n\nFunction Name: " << cstr
-                << "\n------------------------------------------------------------------------------\n";
-            I = inst_begin(F);
-            E = inst_end(F);
-        }
-        /*else {
-            I = selectInsts->begin();
-            E = selectInsts->end();
-        } */
+        I = inst_begin(F);
+        E = inst_end(F);
         for ( ; I != E;) {
-        //for ( ; I != E; I++) {
             Inext = I;
             Inext++;
             Value *in = &(*I);
             if (in == NULL)
                 continue;
-            //errs()  << *I; 
-            if ( (isa<StoreInst>(in) || isa<LoadInst>(in) || isa<BinaryOperator>(in) || isa<CmpInst>(in)
-                || isa<CallInst>(in) || isa<AllocaInst>(in) || isa<GetElementPtrInst>(in)) ) {
+            if ( (isa<StoreInst>(in) || isa<LoadInst>(in)
+                || isa<BinaryOperator>(in) || isa<CmpInst>(in)
+                || isa<CallInst>(in) || isa<AllocaInst>(in) 
+                || isa<GetElementPtrInst>(in)) ) 
+            {   
                 injectFault(&(*I));
-                //    I++;
-                //errs()  << "; Fault Index: " << displayIdx++;
             }
-            //errs() <<'\n';
+
+            /* find next inst that is original to the function */
             while (I != Inext && I != E) { I++; }
         }
     }/*end for*/
@@ -170,7 +169,6 @@ bool FlipIt::DynamicFaults::viableFunction(std::string func, std::vector<std::st
    
     /* verify func isn't a flipit runtime or a user specified
     non-inject function */
-     
     if (func.find("corruptIntData_8bit") != std::string::npos  ||
         func.find("corruptIntData_16bit") != std::string::npos   ||
         func.find("corruptIntData_32bit") != std::string::npos   ||
@@ -191,8 +189,13 @@ bool FlipIt::DynamicFaults::viableFunction(std::string func, std::vector<std::st
         if (funcProbs[func] == 0)
             return false;
     
-    if (funcList.length() == 0 || std::find(flist.begin(), flist.end(), func) != flist.end()) 
+    if (funcList.length() == 0
+        || std::find(flist.begin(), flist.end(), func) != flist.end()) {
+        errs() << "\n\nFunction Name: " << func \
+            << "\n-----------------------------------------------------------"\
+            << "-------------------\n";
         return true;
+    }
     return false;
 }
 void  FlipIt::DynamicFaults::init() {
@@ -1061,6 +1064,10 @@ int FlipIt::DynamicFaults::selectArgument(CallInst* callInst) {
         return arg;
     } else if (funcName.find("toggleInjector") != string::npos) {
         return arg;
+    } else if (funcName.find("__STORE_") != string::npos) {
+        argPos.push_back(1); //(fptr, fvalue, gptr, gvalue)
+    } else if (funcName.find("__LOAD_") != string::npos) {
+        return arg; // applies mask inside function
     } else {
         /* populate with valid arguemnts detection of constant integers should
         fix the LLVM intrinsic problem */
@@ -1161,7 +1168,7 @@ bool FlipIt::DynamicFaults::inject_Call(Instruction* I, std::vector<Value*> args
         i2pI = new IntToPtrInst(corruptVal, I->getOperand(opNum)->getType(), "convert_i642ptr", I);
         assert(p2iI);
     }
-
+    
     /* make sure everyone is using corrupt value */
     if (CallI != NULL) {
         if (i2pI == NULL)
@@ -1286,27 +1293,8 @@ void FlipIt::DynamicFaults::cacheFunctions(Module::FunctionListType &functionLis
         && func_corruptFloatAdr_64bit != NULL);
 }
 
-void FlipIt::DynamicFaults::enumerateSites(std::vector<Instruction*>& ilist, Function *F,
-                                   unsigned& displayIdx, std::vector<Instruction*>* selectInsts) {
-    for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; I++) {
-        Value *in = &(*I);
-        if (in == NULL)
-            continue;
-        errs()  << *I;
-        if ( (isa<StoreInst>(in) || isa<LoadInst>(in) || isa<BinaryOperator>(in) || isa<CmpInst>(in)
-            || isa<CallInst>(in) || isa<AllocaInst>(in) || isa<GetElementPtrInst>(in)) ) {
-
-            if (selectInsts != NULL) {
-                if(std::find(selectInsts->begin(), selectInsts->end(), &*I) == selectInsts->end()) {
-                    errs() << "\n";
-                    continue;
-                }
-            }
-            ilist.push_back(&*I);
-            errs()  << "; Fault Index: " << displayIdx++;
-        }
-        errs() <<'\n';
-    }
+bool FlipIt::DynamicFaults::corruptInstruction(Instruction* I) {
+    return injectFault(I);
 }
 
 bool FlipIt::DynamicFaults::injectFault(Instruction* I) {
@@ -1336,10 +1324,10 @@ bool FlipIt::DynamicFaults::injectFault(Instruction* I) {
         errs() << '#' << faultIdx++ << '\t' << injectionType << '\t' << comment  << "\t";
         if (MDNode *N = I->getMetadata("dbg")) {
             DILocation Loc(N);
-            unsigned Line = Loc.getLineNumber();
-            StringRef File = Loc.getFilename();
-            // StringRef Dir = Loc.getDirectory();
-            errs() << File << ":" << Line << "\n";
+            unsigned line = Loc.getLineNumber();
+            StringRef file = Loc.getFilename();
+            //StringRef dir = Loc.getDirectory();
+            errs() << /*dir << "/" <<*/ file << ":" << line << "\n";
         } else {
             errs() << *I << '\n';
         }
