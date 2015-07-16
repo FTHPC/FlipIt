@@ -16,6 +16,10 @@
 #
 #####################################################################
 
+############ LLVM BUILD TYPE ################
+BUILD_TYPE = "Debug+Asserts"
+#BUILD_TYPE = "Release+Asserts"
+
 ############### Injector Parameters ##################
 #
 #    config - config file used by the compiler pass

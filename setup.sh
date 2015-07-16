@@ -19,7 +19,10 @@
 
 
 # Setup
-echo "Copying files..."
+echo "
+
+Copying files..."
+#rm -rf $LLVM_BUILD_PATH/lib/Transforms/FlipIt/
 mkdir $LLVM_BUILD_PATH/lib/Transforms/FlipIt/
 ln -s -f $FLIPIT_PATH/src/pass/Makefile $LLVM_BUILD_PATH/lib/Transforms/FlipIt/Makefile
 ln -s -f $FLIPIT_PATH/src/pass/Makefile-Lib $LLVM_BUILD_PATH/lib/Transforms/FlipIt/Makefile-Lib
@@ -28,6 +31,7 @@ ln -s -f $FLIPIT_PATH/src/pass/faults.h $LLVM_BUILD_PATH/lib/Transforms/FlipIt/f
 ln -s -f $FLIPIT_PATH/scripts/createPass.sh $LLVM_BUILD_PATH/lib/Transforms/FlipIt/createPass.sh
 
 # path could be wrong (create new variables LLVM_BUILD_PATH LLVM_REPO_PATH)
+#rm -rf $LLVM_BUILD_PATH/lib/Transforms/FlipIt/
 mkdir $LLVM_REPO_PATH/lib/Transforms/FlipIt
 ln -s -f $FLIPIT_PATH/src/pass/Makefile $LLVM_REPO_PATH/lib/Transforms/FlipIt/Makefile
 ln -s -f $FLIPIT_PATH/src/pass/faults.cpp $LLVM_REPO_PATH/lib/Transforms/FlipIt/faults.cpp
@@ -35,12 +39,16 @@ ln -s -f $FLIPIT_PATH/src/pass/faults.h $LLVM_REPO_PATH/lib/Transforms/FlipIt/fa
 echo "...Done!"
 
 # Reconfigure LLVM
-echo "Reconfiguring..."
+echo "
+
+Reconfiguring..."
 cd $LLVM_BUILD_PATH
 $LLVM_REPO_PATH/configure
 echo "Done!"
 
-echo "Creating pass..."
+echo "
+
+Creating pass..."
 cd $FLIPIT_PATH/scripts/
 ./findLLVMHeaders.py
 cd $LLVM_BUILD_PATH/lib/Transforms/FlipIt
@@ -48,16 +56,20 @@ cd $LLVM_BUILD_PATH/lib/Transforms/FlipIt
 echo "Done!"
 
 # Modify examples have correct #inlcude "corrupt.h"
-echo "Updating headers in examples..."
+echo "
+
+Updating headers in examples..."
 cd $FLIPIT_PATH
-sed -i '/#include "\/path\/to\/flipit\/src\/corrupt\/corrupt.h"/c\#include "'$FLIPIT_PATH'/src/corrupt.corrupt.h"'  ./examples/seq/matmul/main.c
-sed -i '/#include "\/path\/to\/flipit\/src\/corrupt\/corrupt.h"/c\#include "'$FLIPIT_PATH'/src/corrupt.corrupt.h"'  ./examples/mpi/jacobi/main.c
-sed -i '/#include "\/path\/to\/flipit\/src\/corrupt\/corrupt.h"/c\#include "'$FLIPIT_PATH'/src/corrupt.corrupt.h"'  ./examples/pass/Foo/main.c
+sed -i '/#include "\/path\/to\/flipit\/src\/corrupt\/corrupt.h"/c\#include "'$FLIPIT_PATH'/src/corrupt/corrupt.h"'  ./examples/seq/matmul/main.c
+sed -i '/#include "\/path\/to\/flipit\/src\/corrupt\/corrupt.h"/c\#include "'$FLIPIT_PATH'/src/corrupt/corrupt.h"'  ./examples/mpi/jacobi/main.c
+sed -i '/#include "\/path\/to\/flipit\/src\/corrupt\/corrupt.h"/c\#include "'$FLIPIT_PATH'/src/corrupt/corrupt.h"'  ./examples/pass/Foo/main.c
 echo "Done!"
 
 # Build corrupting library
 mkdir $FLIPIT_PATH/lib
-echo "Building the corruption library..."
+echo "
+
+Building the corruption library..."
 cd $FLIPIT_PATH/scripts/
 ./library.sh
 ./genBC.py
