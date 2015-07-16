@@ -24,6 +24,7 @@ static int FLIPIT_State = 0;
 static int FLIPIT_InjectionCount = 0;
 static unsigned long FLIPIT_Attempts = 0;
 static unsigned long FLIPIT_InjCountdown = 0;
+static unsigned long FLIPIT_TotalInsts = 0;
 
 /*Fault Injection Statistics*/
 static unsigned long* FLIPIT_Histogram;
@@ -38,7 +39,6 @@ static int* FLIPIT_FaultSites = NULL;
 static int FLIPIT_NumFaultSites = -1;
 
 
-static unsigned long FLIPIT_Attempts;
 static void (*FLIPIT_CustomLogger)(FILE*) = NULL;
 static void (*FLIPIT_CountdownCustomLogger)(FILE*) = NULL;
 static double (*FLIPIT_FaultProb)() = NULL;
@@ -140,6 +140,13 @@ void FLIPIT_CountdownTimer(unsigned long numInstructions) {
     FLIPIT_CustomLogger = flipit_countdownLogger;
 }
 
+unsigned long long FLIPIT_GetExecutedInstructionCount() {
+    return FLIPIT_TotalInsts;
+}
+
+int FLIPIT_GetInjectionCount() {
+    return FLIPIT_InjectionCount;
+}
 
 /***********************************************************************************************/
 /* User callable function for FORTRAN wrapper                                              */
@@ -234,7 +241,7 @@ static void flipit_parseArgs(int argc, char** argv) {
 static int flipit_shouldInject(int fault_index, int inject_once) {    
     int i;
     int inject = (FLIPIT_State && FLIPIT_RankInject) ? 1 : 0;
-
+    FLIPIT_TotalInsts++;
     if (!inject)
         return 0;
 

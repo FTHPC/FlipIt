@@ -40,6 +40,8 @@ void FLIPIT_SetRankInject(int state);
 void FLIPIT_SetFaultProbability(double(faultProb)());
 void FLIPIT_SetCustomLogger(void (customLogger)(FILE*));
 void FLIPIT_CountdownTimer(unsigned long numInstructions);
+unsigned long long FLIPIT_GetExecutedInstructionCount();
+int FLIPIT_GetInjectionCount();
 
 /* FORTRAN VERSIONS (ex: CALL flipit_init_ftn(myrank, argc, argv, seed) */
 int flipit_init_ftn_(int* myRank, int* argc, char*** argv, unsigned long long* seed);
