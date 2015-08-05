@@ -19,6 +19,7 @@ To cite:
   bibsource = {dblp computer science bibliography, http://dblp.org}
 }
 ```
+Portions of the project were partially supported by the Air Force Office of Scientific Research under grant FA9550-12-1-0478.
 
 
 # FlipIt Installation
