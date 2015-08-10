@@ -5,13 +5,21 @@ FlipIt: An LLVM Based Fault Injector for HPC
 
 To cite:
 ```
-@inproceedings{CalhounOlsonSnir:2014:FlipIt,
+@inproceedings{DBLP:conf/europar/CalhounOS14,
   author    = {Jon Calhoun and Luke Olson and Marc Snir},
-  title     = {{FlipIt: An LLVM Based Fault Injector for HPC}},
-  booktitle = {Proceedings of the 20th International Euro-Par Conference on Parallel Processing (Euro-Par '14)},
+  title     = {FlipIt: An {LLVM} Based Fault Injector for {HPC}},
+  booktitle = {Euro-Par 2014: Parallel Processing Workshops - Euro-Par 2014 International Workshops, Porto, Portugal, August 25-26, 2014, Revised Selected Papers, Part {I}},
+  pages     = {547--558},
   year      = {2014},
+  crossref  = {DBLP:conf/europar/2014w1},
+  url       = {http://dx.doi.org/10.1007/978-3-319-14325-5_47},
+  doi       = {10.1007/978-3-319-14325-5_47},
+  timestamp = {Sun, 14 Dec 2014 18:38:30 +0100},
+  biburl    = {http://dblp.uni-trier.de/rec/bib/conf/europar/CalhounOS14},
+  bibsource = {dblp computer science bibliography, http://dblp.org}
 }
 ```
+This project is partially supported by the Air Force Office of Scientific Research under grant FA9550-12-1-0478.
 
 
 # FlipIt Installation
@@ -24,7 +32,7 @@ To cite:
 git clone git@github.com:aperson40/FlipIt.git
 ```
 
-3.) Modify your bashrc file to add directory to path and set some environment variables:
+3.) Modify your bashrc file to add directory to path and set some environment variables. If you have a *Release+Asserts* build of LLVM, replace *Debug+Asserts* with it in the following:
 
 ```
  PATH = $PATH:/path/to/build/Debug+Asserts/bin
