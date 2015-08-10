@@ -166,7 +166,8 @@ def readTrials(c, filePrefix, customParser = None):
                 i += 1
                 l = t[i]
                 while siteEndMessage not in l:
-                    inj.append(l.split(" "))
+                    if l != "\n":
+                        inj.append(l.split(" "))
                     i += 1
                     l = t[i]
  

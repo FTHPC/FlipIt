@@ -293,6 +293,8 @@ def visInjectionsInCode(c, functions):
         # we only want to show the section of code that we inject in
         lines = [i[1] for i in result] 
         file = result[0][0]
+        if ".LLVM.txt" in file:
+            file = result[-1][0]
         minimum = np.min(lines)-1
         minimum = minimum if minimum >= 0 else 0
         maximum = np.max(lines)+1
@@ -312,6 +314,7 @@ def visInjectionsInCode(c, functions):
         if not os.path.isfile(srcPath+file):
             print "Warning (visInjectionsInCode): source file not found -- ", srcPath + file
             continue
+        print "\nRelating injections to source code in file: ", srcPath+file
         FILE = open(srcPath+file, "r")
         function = FILE.readlines()[minimum:maximum]
         FILE.close()
