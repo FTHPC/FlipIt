@@ -35,7 +35,7 @@ git clone git@github.com:aperson40/FlipIt.git
 3.) Modify your bashrc file to add directory to path and set some environment variables. If you have a *Release+Asserts* build of LLVM, replace *Debug+Asserts* with it in the following:
 
 ```
- PATH = $PATH:/path/to/build/Debug+Asserts/bin
+ PATH=$PATH:/path/to/build/Debug+Asserts/bin
  export PATH
  export LLVM_BUILD_PATH=/path/to/build/
  export LLVM_REPO_PATH=/path/to/repo/llvm/
