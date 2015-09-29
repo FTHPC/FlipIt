@@ -56,7 +56,9 @@ cd $FLIPIT_PATH/examples
 ./testPass.sh
 ```
 
-If all worked correctly, 2 + 2 is not 4.
+If all worked correctly, 2 + 2 is not 4. If not, check out the [Examples](https://github.com/aperson40/FlipIt/wiki/Examples) wiki page for suggested solutions.
+
+Detailed walk though of the FlipIt [examples](https://github.com/aperson40/FlipIt/wiki/Examples).
 
 ------------------------------
 FlipIt is licensed under the University of Illinois/NCSA Open Source License. See [LICENSE.TXT](LICENSE.TXT) for details.
