@@ -65,13 +65,14 @@ void FLIPIT_Init(int myRank, int argc, char** argv, unsigned long long seed) {
         printf("Fault injector seed: %llu\n", seed+myRank);
     
     home = getenv("HOME");
-    path = (char*) malloc(strlen(home) + strlen("/.FlipItState"));
+    path = (char*) malloc(strlen(home) + strlen("/.FlipItState")+1);
     strcpy(path, home);
     strcat(path, "/.FlipItState");
     infile = fopen(path, "r");
-    if (infile) 
+    if (infile) {
         ammount = fscanf(infile, "%d", &FLIPIT_MAX_LOC);
-    fclose(infile);
+        fclose(infile);
+    }
     FLIPIT_Histogram = (unsigned long*) calloc(FLIPIT_MAX_LOC, sizeof(unsigned long));
 
     #ifdef FLIPIT_DEBUG
