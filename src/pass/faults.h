@@ -44,7 +44,7 @@
  
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Analysis/LoopPass.h>
-#include <llvm/Support/InstIterator.h>
+#include <llvm/IR/InstIterator.h>
 #include <llvm/PassManager.h>
 #include <llvm/IR/CallingConv.h>
 #include <llvm/Analysis/Verifier.h>
