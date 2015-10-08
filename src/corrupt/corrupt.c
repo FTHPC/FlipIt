@@ -69,7 +69,8 @@ void FLIPIT_Init(int myRank, int argc, char** argv, unsigned long long seed) {
     strcpy(path, home);
     strcat(path, "/.FlipItState");
     infile = fopen(path, "r");
-    if (infile) { 
+    
+    if (infile) {
         ammount = fscanf(infile, "%d", &FLIPIT_MAX_LOC);
         fclose(infile);
     }

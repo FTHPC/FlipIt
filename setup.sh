@@ -17,35 +17,6 @@
 #####################################################################
 # setup.sh
 
-:'
-# Setup
-echo "
-
-Copying files..."
-#rm -rf $LLVM_BUILD_PATH/lib/Transforms/FlipIt/
-mkdir $LLVM_BUILD_PATH/lib/Transforms/FlipIt/
-ln -s -f $FLIPIT_PATH/src/pass/Makefile $LLVM_BUILD_PATH/lib/Transforms/FlipIt/Makefile
-ln -s -f $FLIPIT_PATH/src/pass/Makefile-Lib $LLVM_BUILD_PATH/lib/Transforms/FlipIt/Makefile-Lib
-ln -s -f $FLIPIT_PATH/src/pass/faults.cpp $LLVM_BUILD_PATH/lib/Transforms/FlipIt/faults.cpp
-ln -s -f $FLIPIT_PATH/src/pass/faults.h $LLVM_BUILD_PATH/lib/Transforms/FlipIt/faults.h
-ln -s -f $FLIPIT_PATH/scripts/createPass.sh $LLVM_BUILD_PATH/lib/Transforms/FlipIt/createPass.sh
-
-# path could be wrong (create new variables LLVM_BUILD_PATH LLVM_REPO_PATH)
-#rm -rf $LLVM_BUILD_PATH/lib/Transforms/FlipIt/
-mkdir $LLVM_REPO_PATH/lib/Transforms/FlipIt
-ln -s -f $FLIPIT_PATH/src/pass/Makefile $LLVM_REPO_PATH/lib/Transforms/FlipIt/Makefile
-ln -s -f $FLIPIT_PATH/src/pass/faults.cpp $LLVM_REPO_PATH/lib/Transforms/FlipIt/faults.cpp
-ln -s -f $FLIPIT_PATH/src/pass/faults.h $LLVM_REPO_PATH/lib/Transforms/FlipIt/faults.h
-echo "...Done!"
-
-# Reconfigure LLVM
-echo "
-
-Reconfiguring..."
-cd $LLVM_BUILD_PATH
-$LLVM_REPO_PATH/configure
-echo "Done!"
-'
 
 echo "
 
