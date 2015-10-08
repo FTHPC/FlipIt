@@ -23,13 +23,11 @@ ctrl = 1
 ############# Library Parameters #####################
 #
 #    FLIPIT_PATH - Path to FlipIt repo
-#    LLVM_BULID_PATH - Path to LLVM build directory
 #    SHOW - libraries and path wraped by mpicc 
 #
 #####################################################
 import os
 FLIPIT_PATH = os.environ['FLIPIT_PATH'] 
-LLVM_BUILD_PATH = os.environ['LLVM_BUILD_PATH'] 
 SHOW = ""
 
 

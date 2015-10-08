@@ -1,15 +1,15 @@
 #####################################################################
 #
 # Example that shows how to use the "flip-cc" compiler script. 
-# In addition, it shows how to turn the injector on/off.
+# In addition, it shows how to use the countdown timer for injection.
 #
 #####################################################################
 
 CC=gcc
-CFLAGS = -g
+CFLAGS = -g -I$(FLIPIT_PATH)/include
 
 FILIB= -L$(FLIPIT_PATH)/lib -lcorrupt
-FIPASS= $(LLVM_BUILD_PATH)/Debug+Asserts/lib/FlipIt.so
+FIPASS= $(FLIPIT_PATH)/lib/libFlipItPass.so
 LFLAGS = $(FILIB)
 
 long: matmul.o main.o
@@ -17,8 +17,8 @@ long: matmul.o main.o
 
 matmul.o: matmul.c
 	clang $(CFLAGS) -emit-llvm matmul.c  -c -o matmul.bc 
-	llvm-link $(FLIPIT_PATH)/src/corrupt/corrupt.bc matmul.bc  -o crpt_matmul.bc
-	opt -load $(FIPASS) -FlipIt -config matmul_countdown.config -singleInj 0 -prob 1e-8 -byte -1 -arith 1 -ctrl 1 -ptr 1 -funcList "" < crpt_matmul.bc > final.bc 2> matmul.LLVM.txt
+	llvm-link $(FLIPIT_PATH)/include/FlipIt/corrupt/corrupt.bc matmul.bc  -o crpt_matmul.bc
+	opt -load $(FIPASS) -FlipIt -config FlipIt.config -singleInj 0 -prob 1e-8 -byte -1 -arith 1 -ctrl 1 -ptr 1 -funcList "" crpt_matmul.bc -o final.bc 2> matmul.LLVM.txt
 	clang  -c final.bc -o matmul.o
 
 main.o: main.c
@@ -37,8 +37,9 @@ _main.o: main.c
 
 
 clean:
-	rm *.bc
-	rm *.o
-	rm *.LLVM.txt
-	rm long
-	rm short
+	rm -rf *.bc
+	rm -rf *.o
+	rm -rf *.LLVM.txt
+	rm -rf long
+	rm -rf short
+

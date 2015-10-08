@@ -19,36 +19,37 @@
 #####################################################################
 
 import os
+import sys
 
 LLVM_REPO_PATH = os.environ['LLVM_REPO_PATH']
 
 # heade files used by the complier pass in 'faults.h'
 # might should grab this information from 'faults.h' and build at runtime.
-flipitHeaders = {'Pass.h':"#include <llvm\/Pass.h>",\
-		'ArrayRef.h':"#include <llvm\/ADT\/ArrayRef.h>",\
-		'Function.h':"#include <llvm\/IR\/Function.h>",\
-		'Module.h':"#include <llvm\/IR\/Module.h>",\
-		'User.h':"#include <llvm\/IR\/User.h>",\
-		'IRBuilder.h':"#include <llvm\/IR\/IRBuilder.h>",\
-		'Instructions.h':"#include <llvm\/IR\/Instructions.h>",\
-		'raw_ostream.h':"#include <llvm\/Support\/raw_ostream.h>",\
-		'Statistic.h':"#include <llvm\/ADT\/Statistic.h>",\
-		'"MachineOperand.h':"#include <llvm\/CodeGen\/MachineOperand.h>",\
-		'CommandLine.h':"#include <llvm\/Support\/CommandLine.h>",\
-		'LoopPass.h':"#include <llvm\/Analysis\/LoopPass.h>",\
-		'InstIterator.h':"#include <llvm\/Support\/InstIterator.h>",\
-		'PassManager.h':"#include <llvm\/PassManager.h>",\
-		'CallingConv.h':"#include <llvm\/IR\/CallingConv.h>",\
-		'Verifier.h':"#include <llvm\/Analysis\/Verifier.h>",\
-		'PrintModulePass.h':"#include <llvm\/Assembly\/PrintModulePass.h>",\
-		'DebugInfo.h':"#include <llvm\/DebugInfo.h>",\
-		'Instruction.h':"#include <llvm\/IR\/Instruction.h>",\
-		'TypeBuilder.h':"#include <llvm\/IR\/TypeBuilder.h>"}
+flipitHeaders = {'Pass.h': "#include <llvm\/Pass.h>",\
+		'ArrayRef.h': "#include <llvm\/ADT\/ArrayRef.h>",\
+		'Function.h': "#include <llvm\/IR\/Function.h>",\
+		'Module.h': "#include <llvm\/IR\/Module.h>",\
+		'User.h': "#include <llvm\/IR\/User.h>",\
+		'IRBuilder.h': "#include <llvm\/IR\/IRBuilder.h>",\
+		'Instructions.h': "#include <llvm\/IR\/Instructions.h>",\
+		'raw_ostream.h': "#include <llvm\/Support\/raw_ostream.h>",\
+		'Statistic.h': "#include <llvm\/ADT\/Statistic.h>",\
+		'MachineOperand.h': "#include <llvm\/CodeGen\/MachineOperand.h>",\
+		'CommandLine.h': "#include <llvm\/Support\/CommandLine.h>",\
+		'LoopPass.h': "#include <llvm\/Analysis\/LoopPass.h>",\
+		'InstIterator.h': "#include <llvm\/IR\/InstIterator.h>",\
+		'PassManager.h': "#include <llvm\/PassManager.h>",\
+		'CallingConv.h': "#include <llvm\/IR\/CallingConv.h>",\
+		'Verifier.h': "#include <llvm\/Analysis\/Verifier.h>",\
+		'PrintModulePass.h': "#include <llvm\/Assembly\/PrintModulePass.h>",\
+		'DebugInfo.h': "#include <llvm\/DebugInfo.h>",\
+		'Instruction.h': "#include <llvm\/IR\/Instruction.h>",\
+		'TypeBuilder.h': "#include <llvm\/IR\/TypeBuilder.h>"}
 
 
 # replace header files in 'faults.h' with the correct headers for the version 
 #of LLVM at $LLVM_REPO_PATH
-filePath = os.environ['FLIPIT_PATH'] + "/src/pass/faults.h"
+filePath = sys.argv[1] #os.environ['FLIPIT_PATH'] + "/src/pass/faults.h"
 for path, subdirs, files in os.walk(LLVM_REPO_PATH + "/include/llvm"):
 	for name in files:
 		if name in flipitHeaders.keys():

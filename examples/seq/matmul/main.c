@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "/path/to/flipit/src/corrupt/corrupt.h"
+#include "FlipIt/corrupt/corrupt.h"
 
 int main(int argc, char** argv)
 {

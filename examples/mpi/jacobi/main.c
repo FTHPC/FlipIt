@@ -2,7 +2,7 @@
 #include <math.h>
 #include <mpi.h>
 #include "jacobi.h"
-#include "/path/to/flipit/src/corrupt/corrupt.h"
+#include "FlipIt/corrupt/corrupt.h"
 
 /* This example handles a 12 x 12 mesh, on 4 processors only. */
 

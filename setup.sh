@@ -17,7 +17,7 @@
 #####################################################################
 # setup.sh
 
-
+:'
 # Setup
 echo "
 
@@ -45,14 +45,20 @@ Reconfiguring..."
 cd $LLVM_BUILD_PATH
 $LLVM_REPO_PATH/configure
 echo "Done!"
+'
 
 echo "
 
 Creating pass..."
 cd $FLIPIT_PATH/scripts/
-./findLLVMHeaders.py
-cd $LLVM_BUILD_PATH/lib/Transforms/FlipIt
-./createPass.sh
+./findLLVMHeaders.py $FLIPIT_PATH/src/pass/faults.h
+#cd $LLVM_BUILD_PATH/lib/Transforms/FlipIt
+#./createPass.sh
+
+cd $FLIPIT_PATH/src/pass
+make -f Makefile
+mkdir $FLIPIT_PATH/lib/
+mv *.so $FLIPIT_PATH/lib
 echo "Done!"
 
 # Modify examples have correct #inlcude "corrupt.h"
@@ -66,7 +72,7 @@ sed -i '/#include "\/path\/to\/flipit\/src\/corrupt\/corrupt.h"/c\#include "'$FL
 echo "Done!"
 
 # Build corrupting library
-mkdir $FLIPIT_PATH/lib
+#mkdir $FLIPIT_PATH/lib
 echo "
 
 Building the corruption library..."
@@ -95,3 +101,12 @@ else
 	echo "Error: Unable to make corruption library!"
 fi
 
+echo "
+
+Copying headers to include dir"
+cd $FLIPIT_PATH
+mkdir -p -v include/FlipIt/corrupt
+mkdir -p -v include/FlipIt/pass
+cp src/corrupt/corrupt.h include/FlipIt/corrupt/
+cp src/corrupt/corrupt.bc include/FlipIt/corrupt/
+cp src/pass/faults.h include/FlipIt/pass/

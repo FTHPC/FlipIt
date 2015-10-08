@@ -34,6 +34,11 @@ def shouldInject(argv, notInject):
             return False
     return True
 
+def addFlipItLinkage(cmd):
+    if " -c " not in cmd:
+        cmd += " -L" + FLIPIT_PATH + "/lib -lcorrupt "
+    return cmd
+
 def removeLinking(flags):
     noLinker = " "
     for i in flags.split(" "):
@@ -52,9 +57,9 @@ if (shouldInject(sys.argv, notInject)):
 
     setConfig(sys.argv)
 
-    step1 = "clang -emit-llvm "
-    step2 = "llvm-link " + FLIPIT_PATH +"/src/corrupt/corrupt.bc "
-    step3 = "opt -load "+ LLVM_BUILD_PATH + "/" + BUILD_TYPE + "/lib/FlipIt.so -FlipIt " \
+    step1 = "clang -emit-llvm -I" + FLIPIT_PATH + "/include "
+    step2 = "llvm-link " + FLIPIT_PATH +"/include/FlipIt/corrupt/corrupt.bc "
+    step3 = "opt -load "+ FLIPIT_PATH + "/lib/libFlipItPass.so -FlipIt " \
         + " -config " + config \
         + " -singleInj " + str(singleInj) \
         + " -prob " + str(prob) \
@@ -124,6 +129,5 @@ if (shouldInject(sys.argv, notInject)):
     os.system(step4)
 else:
 
-    sys.argv[0] = cc
-    os.system( ' '.join(sys.argv) )
-
+    sys.argv[0] = cc + " -I" + FLIPIT_PATH + "/include "
+    os.system( addFlipItLinkage(' '.join(sys.argv)) )

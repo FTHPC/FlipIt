@@ -7,17 +7,28 @@
 #
 #####################################################################
 
-# Path to top level of LLVM hierarchy
-LEVEL = ../../../
+CXX=clang
+LLVM_CONFIG=llvm-config
 
-# Name of the library to build
-LIBRARYNAME = FlipIt
+CXXFLAGS= -Wall -O2 -g -std=c++11 -fno-rtti
+CXXFLAGS += $(shell $(LLVM_CONFIG) --cxxflags) -fPIC 
+#CXXFLAGS += -DCOMPILE_PASS 
 
+LDFLAGS = $(shell $(LLVM_CONFIG) --ldflags)
 
-# Make the shared library become a loadable module so the tools can
-# dlopen/dlsym on the resulting library.
-LOADABLE_MODULE = 1
+ifeq ($(shell uname),Darwin)
+SHARED_LIB_OPT  = -bundle -undefined dynamic_lookup
+else
+SHARED_LIB_OPT  = -shared -Wl, -O1
+endif
 
-# Include the makefile implementation stuff
-include $(LEVEL)/Makefile.common
-CXX.Flags += -DCOMPILE_PASS
+all: libFlipItPass.so libFlipIt.so
+
+libFlipItPass.so:faults.cpp
+	$(CXX) $(CXXFLAGS) -DCOMPILE_PASS $(LDFLAGS) -o $@ $(SHARED_LIB_OPT) $<
+
+libFlipIt.so:faults.cpp
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(SHARED_LIB_OPT) $<
+
+clean:
+	rm -rf *.o *.so

@@ -11,11 +11,11 @@
 #
 #####################################################
 
-config = "matmul_countdown.config"
+config = "matmul.config"
 funcList = "\"\""
 prob = 1e-8
 byte = -1
-singleInj = 0
+singleInj = 1 
 ptr = 1
 arith = 1
 ctrl = 1
@@ -32,11 +32,11 @@ SHOW = ""
 
 
 ########### Files to NOT inject inside ###############
-notInject = [" ", " "]
+notInject = ["main.c", " "]
 
 ############ Default Compiler #################
 cc = "gcc"
 
 ############ Verbose compiler output ##############
-verbose = False 
+verbose = True 
 
