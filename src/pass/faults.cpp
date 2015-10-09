@@ -222,15 +222,17 @@ void FlipIt::DynamicFaults::readConfig(string path) {
     ifstream infile;
     string line;
     infile.open(path.c_str());
-
+    //errs() << "reading config file " << path << "\n";
     // read inst probs
     getline(infile, line); // INSTRUCTIONS:
     getline(infile, line);
     while (line != "FUNCTIONS:" && infile) {
         unsigned long found = line.find("=");
 
-        if (found != string::npos)
-            instProbs[line.substr(0, found)] = atof(line.substr(found+1).c_str());
+        if (found != string::npos) {
+            instProbs.insert(std::pair<std::string, double>(line.substr(0, found), atof(line.substr(found+1).c_str())));
+            //instProbs[line.substr(0, found)] = atof(line.substr(found+1).c_str());
+        }
         getline(infile, line);
     }
 
@@ -238,8 +240,10 @@ void FlipIt::DynamicFaults::readConfig(string path) {
     while (infile) {
         unsigned long found = line.find("=");
 
-        if (found != string::npos && line[0] != '#')
-            funcProbs[line.substr(0, found)] = atof(line.substr(found+1).c_str());
+        if (found != string::npos && line[0] != '#') {
+            funcProbs.insert(std::pair<std::string, double>(line.substr(0, found), atof(line.substr(found+1).c_str())));
+            //funcProbs[line.substr(0, found)] = atof(line.substr(found+1).c_str());
+        }
         getline(infile, line);
     }
     infile.close();
