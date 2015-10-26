@@ -32,9 +32,9 @@ FlipIt::DynamicFaults::DynamicFaults(Module* M) {
     ctrl_err = true;
     ptr_err = true;
     
-    Module::FunctionListType &functionList = M->getFunctionList();
+    //Module::FunctionListType &functionList = M->getFunctionList();
     init();
-    cacheFunctions(functionList);
+    //cacheFunctions();
 #endif
     func_corruptIntData_8bit = NULL;
     func_corruptIntData_16bit = NULL;
@@ -55,14 +55,15 @@ FlipIt::DynamicFaults::DynamicFaults(Module* M) {
 #ifdef COMPILE_PASS
 FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, double _siteProb, 
                             int _byte_val, int _singleInj, bool _arith_err, 
-                            bool _ctrl_err, bool _ptr_err, Module* M): ModulePass(ID)
+                            bool _ctrl_err, bool _ptr_err, Module* Mod): ModulePass(ID)
 #else
 
 FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, double _siteProb, 
                             int _byte_val, int _singleInj, bool _arith_err, 
-                            bool _ctrl_err, bool _ptr_err, Module* M)
+                            bool _ctrl_err, bool _ptr_err, Module* Mod)
 #endif
 {
+    M = Mod;
     funcList = _funcList;
     configPath =  _configPath;
     siteProb = _siteProb;
@@ -87,14 +88,16 @@ FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, doubl
     func_corruptFloatAdr_64bit = NULL;
     
 #ifndef COMPILE_PASS
-    Module::FunctionListType &functionList = M->getFunctionList();
+   // Module::FunctionListType &functionList = M->getFunctionList();
     init();
-    cacheFunctions(functionList);
+    //cacheFunctions();
 #endif
 }
 
 
-bool FlipIt::DynamicFaults::runOnModule(Module &M) {
+bool FlipIt::DynamicFaults::runOnModule(Module &Mod) {
+
+    M = &Mod;
     srand(time(NULL));
     if (byte_val < -1 || byte_val > 7)
         byte_val = rand() % 8;
@@ -108,18 +111,15 @@ bool FlipIt::DynamicFaults::runOnModule(Module &M) {
     assert(ptr_err == 1 || ptr_err == 0);
 
 
-    Module::FunctionListType &functionList = M.getFunctionList();
+    //Module::FunctionListType &functionList = M.getFunctionList();
     vector<std::string> flist = splitAtSpace(funcList);
 
 
     init();
 
-    /*Cache function references of the function defined in Corrupt.c to all inserting of
-     *call instructions to them */
-    cacheFunctions(functionList);
 
     /*Corrupt all instruction in vaible functions or in selectedList */
-    for (Module::iterator F = functionList.begin(); F != functionList.end(); ++F) {
+    for (auto F = M->begin(), FE = M->end(); F != FE; ++F) {
         
         /* extract the pure function name, i.e. demangle if using c++*/
         std::string cstr = demangle(F->getName().str());
@@ -199,8 +199,17 @@ bool FlipIt::DynamicFaults::viableFunction(std::string func, std::vector<std::st
     return false;
 }
 void  FlipIt::DynamicFaults::init() {
-    faultIdx = 0;
     displayIdx = 0;
+    readConfig(configPath);
+    
+    /*Cache function references of the function defined in Corrupt.c to all inserting of
+     *call instructions to them */
+    unsigned long sum = cacheFunctions();
+
+    // TODO: get stateFile from config
+    faultIdx = updateStateFile("FlipItState"/*stateFile*/, sum);
+    displayIdx = faultIdx;
+/*
     ifstream infile;
     string path(getenv("HOME"));
     path += "/.FlipItState";
@@ -214,12 +223,11 @@ void  FlipIt::DynamicFaults::init() {
         displayIdx = 0;
     }
     infile.close();
-
-    readConfig(configPath);
+*/
 }
 
 void FlipIt::DynamicFaults::readConfig(string path) {
-    ifstream infile;
+    std::ifstream infile;
     string line;
     infile.open(path.c_str());
     //errs() << "reading config file " << path << "\n";
@@ -251,7 +259,8 @@ void FlipIt::DynamicFaults::readConfig(string path) {
 
 
 bool  FlipIt::DynamicFaults::finalize() {
-    ofstream outfile;
+    /*
+    std::ofstream outfile;
     string path(getenv("HOME"));
     path += "/.FlipItState";
 
@@ -262,7 +271,7 @@ bool  FlipIt::DynamicFaults::finalize() {
         outfile << faultIdx << " " << displayIdx;
     }
     outfile.close();
-
+*/
     return oldFaultIdx != faultIdx;
 }
 
@@ -290,6 +299,47 @@ double FlipIt::DynamicFaults::getInstProb(Instruction* I) {
     file or the default probabilty given as a command line argument */
     string type = I->getOpcodeName();
     return instProbs.find(type) != instProbs.end() ? instProbs[type] : siteProb;
+}
+
+unsigned long FlipIt::DynamicFaults::updateStateFile(const char* stateFile, unsigned long sum)
+{
+    unsigned long startNum = 0;
+
+    // grab lock
+    string homePath(getenv("HOME"));
+    string lockPath = homePath + "/.lock";
+    int fd = open(lockPath.c_str(), O_RDWR | O_CREAT, 0666);
+    while (flock(fd, LOCK_EX | LOCK_NB)) {}
+
+    // read and update the state file    
+    string stateFilePath = homePath + "/." + stateFile;
+    std::fstream file(stateFilePath);
+
+    if (!file.is_open()) {
+        errs() << "Error opening state file: " << stateFilePath << " Assuming fault index of 0";
+        file.close();
+        file.open(stateFilePath, std::fstream::out);
+        if (!file.is_open()) {
+            file.close();
+            return 0;
+        }
+    }
+    else {
+        printf("\n\nUpdateing state file\n\n");
+        file >> startNum;
+    }
+    
+    // clear the file cause the eof bit is reached
+    file.clear();
+    file.seekg(0, ios::beg);
+
+    file << (startNum + sum);
+    file.close();
+
+    // release file lock
+    flock(fd, LOCK_UN);
+    close(fd);
+    return startNum;
 }
 
 bool FlipIt::DynamicFaults::injectControl(Instruction* I) {
@@ -1254,38 +1304,41 @@ bool FlipIt::DynamicFaults::inject_GetElementPtr_Ptr(Instruction* I, std::vector
 }
 
 
-void FlipIt::DynamicFaults::cacheFunctions(Module::FunctionListType &functionList) {
-    StringRef lstr;
-    for (Module::iterator it = functionList.begin(); it != functionList.end(); ++it) {
-        lstr = it->getName();
-        string cstr = lstr.str();
+unsigned long FlipIt::DynamicFaults::cacheFunctions() { //Module::FunctionListType &functionList) {
+    unsigned long sum = 0; // # insts in module
+    for (auto F = M->getFunctionList().begin(), E = M->getFunctionList().end(); F != E; F++) {
+        string cstr = F->getName().str();
         if (cstr.find("corruptIntData_8bit") != std::string::npos) {
-            func_corruptIntData_8bit =&*it;
+            func_corruptIntData_8bit =&*F;
         } else if (cstr.find("corruptIntData_16bit") != std::string::npos) {
-            func_corruptIntData_16bit =&*it;
+            func_corruptIntData_16bit =&*F;
         } else if (cstr.find("corruptIntData_32bit") != std::string::npos) {
-            func_corruptIntData_32bit =&*it;
+            func_corruptIntData_32bit =&*F;
         } else if (cstr.find("corruptIntData_64bit") != std::string::npos) {
-            func_corruptIntData_64bit =&*it;
+            func_corruptIntData_64bit =&*F;
         } else if (cstr.find("corruptPtr2Int_64bit") != std::string::npos) {
-            func_corruptPtr2Int_64bit =&*it;
+            func_corruptPtr2Int_64bit =&*F;
         } else if (cstr.find("corruptFloatData_32bit") != std::string::npos) {
-            func_corruptFloatData_32bit =&*it;
+            func_corruptFloatData_32bit =&*F;
         } else if (cstr.find("corruptFloatData_64bit") != std::string::npos) {
-            func_corruptFloatData_64bit =&*it;
+            func_corruptFloatData_64bit =&*F;
         } else if (cstr.find("corruptIntAdr_8bit") != std::string::npos) {
-            func_corruptIntAdr_8bit =&*it;
+            func_corruptIntAdr_8bit =&*F;
         } else if (cstr.find("corruptIntAdr_16bit") != std::string::npos) {
-            func_corruptIntAdr_16bit =&*it;
+            func_corruptIntAdr_16bit =&*F;
         } else if (cstr.find("corruptIntAdr_32bit") != std::string::npos) {
-            func_corruptIntAdr_32bit =&*it;
+            func_corruptIntAdr_32bit =&*F;
         } else if (cstr.find("corruptIntAdr_64bit") != std::string::npos) {
-            func_corruptIntAdr_64bit =&*it;
+            func_corruptIntAdr_64bit =&*F;
         } else if (cstr.find("corruptFloatAdr_32bit") != std::string::npos) {
-            func_corruptFloatAdr_32bit =&*it;
+            func_corruptFloatAdr_32bit =&*F;
         } else if (cstr.find("corruptFloatAdr_64bit") != std::string::npos) {
-            func_corruptFloatAdr_64bit =&*it;
+            func_corruptFloatAdr_64bit =&*F;
         }
+        /* TODO: check for function viability */
+        if (F->begin() != F->end()/* && viableFunction(cstr, flist) */)
+            for (auto BB = F->begin(), BBe = F->end(); BB != BBe; BB++) 
+                sum += BB->size();
     }/*end for*/
 
     assert(func_corruptIntData_8bit != NULL  && func_corruptIntData_16bit != NULL
@@ -1295,6 +1348,8 @@ void FlipIt::DynamicFaults::cacheFunctions(Module::FunctionListType &functionLis
         && func_corruptIntAdr_16bit != NULL  && func_corruptIntAdr_32bit != NULL
         && func_corruptIntAdr_64bit != NULL && func_corruptFloatAdr_32bit != NULL
         && func_corruptFloatAdr_64bit != NULL);
+    
+    return sum;
 }
 
 bool FlipIt::DynamicFaults::corruptInstruction(Instruction* I) {

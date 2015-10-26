@@ -32,6 +32,10 @@
     using std::ofstream;
     using std::ios;
 #include <cxxabi.h>
+#include <sys/file.h>
+#include <stdio.h>
+#include <unistd.h>
+
 #include <llvm/Pass.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/IR/Function.h>
@@ -44,7 +48,7 @@
  
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Analysis/LoopPass.h>
-#include <llvm/Support/InstIterator.h>
+#include <llvm/IR/InstIterator.h>
 #include <llvm/PassManager.h>
 #include <llvm/IR/CallingConv.h>
 #include <llvm/Analysis/Verifier.h>
@@ -52,7 +56,6 @@
 #include <llvm/DebugInfo.h>
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/TypeBuilder.h>
-
 
 
 
@@ -116,6 +119,7 @@ namespace FlipIt {
             double getInstProb(Instruction* I);
             std::string demangle(std::string name);
             bool viableFunction(std::string name, std::vector<std::string> flist);
+            unsigned long updateStateFile(const char* stateFile, unsigned long sum);
 
             bool injectControl(Instruction* I);
             bool injectArithmetic(Instruction* I);
@@ -132,9 +136,11 @@ namespace FlipIt {
             bool inject_Call(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI, BasicBlock* BB);
             bool inject_GetElementPtr_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI, BasicBlock* BB);
 
-            void cacheFunctions(Module::FunctionListType &functionList);
+            unsigned long cacheFunctions();
             bool injectFault(Instruction* I);
 
+            Module* M;
+            
             Value* func_corruptIntData_8bit;
             Value* func_corruptIntData_16bit;
             Value* func_corruptIntData_32bit;

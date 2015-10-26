@@ -11,8 +11,8 @@
 # Name: flipit-cc
 #
 # Description: Wrapper script to hide the process of compilation for 
-#		fault injection. Use it like you would a regular 
-#		compiler.
+#       fault injection. Use it like you would a regular 
+#       compiler.
 #
 #####################################################################
 import sys
@@ -83,7 +83,7 @@ if (shouldInject(sys.argv, notInject)):
             #step4 += "-01 "
         elif ".c" in arg:
             fileName = arg#[0:-2]# grab file name and path
-        elif "-o" in arg:
+        elif "-o" == arg:
             step1 += arg + " "
             arg = sys.argv[i+1]
             fileObj = arg
@@ -122,11 +122,14 @@ if (shouldInject(sys.argv, notInject)):
     if verbose == True:
         print step1 + "\n\n" + step2 + "\n\n" + step3 + "\n\n" + step4
 
-    os.system("rm "+ filePath +"*.bc")
-    os.system(step1)
-    os.system(step2)
-    os.system(step3)
-    os.system(step4)
+    os.system("rm " + fileNameBC + " " + fileName + ".crpt.bc " + fileName + ".final.bc")
+    #check if we need to compile based on modified times
+    if not (os.path.isfile(fileObj) and\
+            (os.path.getmtime(fileObj) > os.path.getmtime(fileName))):
+        os.system(step1)
+        os.system(step2)
+        os.system(step3)
+        os.system(step4)
 else:
 
     sys.argv[0] = cc + " -I" + FLIPIT_PATH + "/include "
