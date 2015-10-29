@@ -325,7 +325,6 @@ unsigned long FlipIt::DynamicFaults::updateStateFile(const char* stateFile, unsi
         }
     }
     else {
-        printf("\n\nUpdateing state file\n\n");
         file >> startNum;
     }
     
