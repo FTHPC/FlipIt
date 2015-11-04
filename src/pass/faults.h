@@ -36,6 +36,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "Logger.h"
+
 #include <llvm/Pass.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/IR/Function.h>
@@ -58,7 +60,6 @@
 #include <llvm/IR/TypeBuilder.h>
 
 
-
 using namespace llvm;
 
 
@@ -71,6 +72,7 @@ static cl::opt<int> singleInj("singleInj", cl::desc("Inject Error Only Once"), c
 static cl::opt<bool> arith_err("arith", cl::desc("Inject Faults Into Arithmetic Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
 static cl::opt<bool> ctrl_err("ctrl", cl::desc("Inject Faults Into Control Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
 static cl::opt<bool> ptr_err("ptr", cl::desc("Inject Faults Into Pointer Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
+static cl::opt<string> srcFile("srcFile", cl::desc("Name of the source file being compiled"), cl::value_desc("e.g. foo.c, foo.cpp, or foo.f90"), cl::init("UNKNOWN"), cl::ValueRequired);
 #endif
 
 
@@ -82,24 +84,25 @@ namespace FlipIt {
     class DynamicFaults : public ModulePass {
 #else
     class DynamicFaults {
-            string funcList;
-            string configPath;
+            std::string funcList;
+            std::string configPath;
             double siteProb;
             int byte_val;
             int singleInj;
             bool arith_err;
             bool ctrl_err;
             bool ptr_err;
+            std::string srcFile;
 #endif
         public:
             static char ID; 
 
 #ifdef COMPILE_PASS
             DynamicFaults(); 
-            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err, Module* M); 
+            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err, std::string srcFile, Module* M); 
 #else
             DynamicFaults(Module* M); 
-            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err, Module* M); 
+            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err, std::string srcFile, Module* M); 
 
 #endif
             //~DynamicFaults()
@@ -140,7 +143,8 @@ namespace FlipIt {
             bool injectFault(Instruction* I);
 
             Module* M;
-            
+            LogFile* logfile;
+ 
             Value* func_corruptIntData_8bit;
             Value* func_corruptIntData_16bit;
             Value* func_corruptIntData_32bit;
@@ -158,8 +162,10 @@ namespace FlipIt {
             // used for display and analysis
             std::map<string, double> funcProbs;
             std::map<string, double> instProbs;
-            string comment;
-            string injectionType;
+            int comment;
+            int injectionType;
+            //string comment;
+            //string injectionType;
             std::stringstream strStream;
             unsigned int oldFaultIdx;
             unsigned int faultIdx;

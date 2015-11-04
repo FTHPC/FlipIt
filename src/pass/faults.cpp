@@ -31,7 +31,7 @@ FlipIt::DynamicFaults::DynamicFaults(Module* M) {
     arith_err = true;
     ctrl_err = true;
     ptr_err = true;
-    
+    srcFile = "UNKNOWN"; 
     //Module::FunctionListType &functionList = M->getFunctionList();
     init();
     //cacheFunctions();
@@ -55,12 +55,12 @@ FlipIt::DynamicFaults::DynamicFaults(Module* M) {
 #ifdef COMPILE_PASS
 FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, double _siteProb, 
                             int _byte_val, int _singleInj, bool _arith_err, 
-                            bool _ctrl_err, bool _ptr_err, Module* Mod): ModulePass(ID)
+                            bool _ctrl_err, bool _ptr_err, std::string _srcFile, Module* Mod): ModulePass(ID)
 #else
 
 FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, double _siteProb, 
                             int _byte_val, int _singleInj, bool _arith_err, 
-                            bool _ctrl_err, bool _ptr_err, Module* Mod)
+                            bool _ctrl_err, bool _ptr_err, std::string _srcFile, Module* Mod)
 #endif
 {
     M = Mod;
@@ -72,6 +72,7 @@ FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, doubl
     arith_err = _arith_err;
     ctrl_err = _ctrl_err;
     ptr_err = _ptr_err;
+    srcFile = _srcFile;
 
     func_corruptIntData_8bit = NULL;
     func_corruptIntData_16bit = NULL;
@@ -194,6 +195,7 @@ bool FlipIt::DynamicFaults::viableFunction(std::string func, std::vector<std::st
         errs() << "\n\nFunction Name: " << func \
             << "\n-----------------------------------------------------------"\
             << "-------------------\n";
+        logfile->logFunctionHeader(faultIdx, func);
         return true;
     }
     return false;
@@ -201,7 +203,6 @@ bool FlipIt::DynamicFaults::viableFunction(std::string func, std::vector<std::st
 void  FlipIt::DynamicFaults::init() {
     displayIdx = 0;
     readConfig(configPath);
-    
     /*Cache function references of the function defined in Corrupt.c to all inserting of
      *call instructions to them */
     unsigned long sum = cacheFunctions();
@@ -209,6 +210,7 @@ void  FlipIt::DynamicFaults::init() {
     // TODO: get stateFile from config
     faultIdx = updateStateFile("FlipItState"/*stateFile*/, sum);
     displayIdx = faultIdx;
+    logfile = new LogFile(srcFile, faultIdx); 
 /*
     ifstream infile;
     string path(getenv("HOME"));
@@ -259,6 +261,10 @@ void FlipIt::DynamicFaults::readConfig(string path) {
 
 
 bool  FlipIt::DynamicFaults::finalize() {
+    printf("Closing file");
+    logfile->close();
+    printf("deleting\n");
+    //delete logfile;
     /*
     std::ofstream outfile;
     string path(getenv("HOME"));
@@ -364,7 +370,8 @@ bool FlipIt::DynamicFaults::injectControl(Instruction* I) {
     /* Choose a fault site in CmpInst and insert Corrupt function call */
     if (isa<CmpInst>(I))
     {
-        injectionType = "Control-Branch";
+        //injectionType = "Control-Branch";
+        injectionType = CONTROL_BRANCH;
         return inject_Compare(I, args, CallI);
     }
 
@@ -374,7 +381,8 @@ bool FlipIt::DynamicFaults::injectControl(Instruction* I) {
         if (I->getName().str().find("indvars") == 0
             || I->getName().str().substr(0, 3) == "inc")
         {
-            injectionType = "Control-Loop";
+            //injectionType = "Control-Loop";
+            injectionType = CONTROL_LOOP;
             return inject_Generic(I, args, CallI, BB);
         }
     return false;
@@ -512,7 +520,11 @@ bool FlipIt::DynamicFaults::inject_Store_Data(Instruction* I, std::vector<Value*
     if (CallI) {
         Value* corruptVal = &(*CallI);
         I->setOperand(0, corruptVal);
+        
+#ifdef OLD_WAY
         comment = "Value";
+#endif
+        comment = VALUE;
         skipAmount = 0;
     }
     return true;
@@ -591,10 +603,12 @@ bool FlipIt::DynamicFaults::inject_Compare(Instruction* I, std::vector<Value*> a
         else
             corruptVal = &(*i2pI);
         I->setOperand(opPos, corruptVal);
-
+        comment = opPos + 1;
+#ifdef OLD_WAY
         strStream << "Operand # " << opPos;
         comment = strStream.str();
         strStream.str("");
+#endif
         skipAmount = 0;
     }
     return true;
@@ -697,7 +711,10 @@ bool FlipIt::DynamicFaults::inject_Generic(Instruction* I, std::vector<Value*> a
         BINext++;
         INext = &*BINext;
         INext->setOperand(4, I); // hard coded. If like others, it says we have an extra argument
+        comment = RESULT;
+#ifdef OLD_WAY
         comment = "Result";
+#endif
         skipAmount = 1;
     }
     return true;
@@ -713,9 +730,15 @@ bool FlipIt::DynamicFaults::inject_Store_Ptr(Instruction* I, std::vector<Value*>
     /* Make sure we corrupt an pointer. First attempt to corupt the value being stored,
     * but if that isn't a pointer let's inject into the address.*/
     int opNum = 0;
+    comment = VALUE;
+#ifdef OLD_WAY
     comment  = "Value";
+#endif
     if (!I->getType()->isPointerTy()) {
+        comment = ADDRESS;
+#ifdef OLD_WAY
         comment = "Address";
+#endif
         opNum = 1;
     }
 
@@ -774,9 +797,12 @@ bool FlipIt::DynamicFaults::inject_Store_Ptr(Instruction* I, std::vector<Value*>
             corruptVal = &(*i2pI);
         I->setOperand(opNum, corruptVal);
 
+        comment = opNum + 1;
+#ifdef OLD_WAY
         strStream << "Operand # " << opNum;
         comment = strStream.str();
         strStream.str("");
+#endif
     }
     return true;
 }
@@ -792,10 +818,16 @@ bool FlipIt::DynamicFaults::inject_Load_Ptr(Instruction* I, std::vector<Value*> 
     /* Make sure we corrupt an pointer. First attempt to corupt the value being loaded,
     * but if that isn't a pointer let's inject into the address */
     Value* ptr =  &(*I);
+#ifdef OLD_WAY
     comment  = "Value";
+#endif
+    comment = VALUE;
     if (!I->getType()->isPointerTy()) {
         ptr = dyn_cast<LoadInst>(I)->getPointerOperand();
+#ifdef OLD_WAY
         comment = "Address";
+#endif
+        comment = ADDRESS;
     }
     args.push_back(ptr);
 
@@ -804,7 +836,10 @@ bool FlipIt::DynamicFaults::inject_Load_Ptr(Instruction* I, std::vector<Value*> 
         return false;
 
     /* Depending on if we are injecting into the result of an operand we need to handle things differenlty */
+#ifdef OLD_WAY
     if (comment == "Value") {
+#endif
+    if (comment == VALUE) {
         if (BI == BB->end()) {
             if (ptr->getType()->isIntegerTy(8)) {
                 CallI = CallInst::Create(func_corruptIntAdr_8bit, args, "call_corruptIntAdr_8bit", BB);
@@ -947,8 +982,10 @@ bool FlipIt::DynamicFaults::inject_Load_Ptr(Instruction* I, std::vector<Value*> 
         }
     }
     if (CallI) {
-
+#ifdef OLD_WAY
         if (comment == "Value") {
+#endif
+        if (comment == VALUE) {
 
             if (i2pI == NULL)
                 corruptVal = &(*CallI);
@@ -1091,7 +1128,10 @@ bool FlipIt::DynamicFaults::inject_Alloc_Ptr(Instruction* I, std::vector<Value*>
         BINext++;
         INext = &*BINext;
         INext->setOperand(/*4*/INext->getNumOperands() - 1, I);
+#ifdef OLD_WAY
         comment = "Result";
+#endif
+        comment = RESULT;
     }
 
     return true;
@@ -1140,7 +1180,8 @@ int FlipIt::DynamicFaults::selectArgument(CallInst* callInst) {
             if ( v->getName().str().find("indvars") == 0
                 || v->getName().str().substr(0, 3) == "inc") {
                 arg = a;
-                injectionType = "Control-Loop";
+                injectionType = CONTROL_LOOP;
+                //injectionType = "Control-Loop";
                 argFound = true;
             }
         } else if (arith_err && (callInst->getArgOperand(a)->getType()->isIntegerTy()
@@ -1148,11 +1189,18 @@ int FlipIt::DynamicFaults::selectArgument(CallInst* callInst) {
                 || callInst->getArgOperand(a)->getType()->isDoubleTy() )
                 && !callInst->getArgOperand(a)->getType()->isIntegerTy(1)) {
             arg = a;
-            injectionType = "Arithmetic";
+            if (callInst->getArgOperand(a)->getType()->isIntegerTy()) {
+                injectionType = ARITHMETIC_FIX;
+            }   else if (callInst->getArgOperand(a)->getType()->isFloatTy()
+                || callInst->getArgOperand(a)->getType()->isDoubleTy()) {
+                injectionType = ARITHMETIC_FP;
+            }
+            //injectionType = "Arithmetic";
             argFound = true;
         } else if (ptr_err) {
             arg = a;
-            injectionType = "Pointer";
+            injectionType = POINTER;
+            //injectionType = "Pointer";
             argFound = true;
         }
         argPos.erase(argPos.begin() + a);
@@ -1229,10 +1277,12 @@ bool FlipIt::DynamicFaults::inject_Call(Instruction* I, std::vector<Value*> args
         else
             corruptVal = &(*i2pI);
         BI->setOperand(opNum, corruptVal);
-
+        comment = opNum +1;
+#ifdef OLD_WAY
         strStream << "Arg # " << opNum;
         comment = strStream.str();
         strStream.str("");
+#endif
     }
     return true;
 }
@@ -1297,7 +1347,11 @@ bool FlipIt::DynamicFaults::inject_GetElementPtr_Ptr(Instruction* I, std::vector
         BINext++;
         INext = &*BINext;
         INext->setOperand(/*4*/INext->getNumOperands() -1, I);
+        
+#ifdef OLD_WAY
         comment = "Result";
+#endif
+        comment = RESULT;
     }
     return true;
 }
@@ -1357,18 +1411,36 @@ bool FlipIt::DynamicFaults::corruptInstruction(Instruction* I) {
 
 bool FlipIt::DynamicFaults::injectFault(Instruction* I) {
     bool ret = false;
+#ifdef OLD_WAY
     comment = "";
     injectionType = "";
+#endif
+    comment = 0; injectionType = 0;
     skipAmount = 0;
     if (ctrl_err && injectControl(I)) {
         ret = true;
         //injectionType = "Control";
     } else if (arith_err && injectArithmetic(I)) {
         ret = true;
+#ifdef OLD_WAY
         injectionType = "Arithmetic";
+#endif
+        Value* tmp = I;
+        if (isa<StoreInst>(I)) {
+            tmp = I->getOperand(0); // value
+        }
+        if (tmp->getType()->isIntegerTy()) {
+            injectionType = ARITHMETIC_FIX;
+        }   else if (tmp->getType()->isFloatTy()
+            || tmp->getType()->isDoubleTy()) {
+            injectionType = ARITHMETIC_FP;
+        }
     } else if (ptr_err && injectPointer(I)) {
         ret = true;
+#ifdef OLD_WAY
         injectionType = "Pointer";
+#endif
+        injectionType = POINTER;
     } else if ( (ctrl_err || arith_err || ptr_err) && injectCall(I) ) {
         ret = true;
     }
@@ -1379,6 +1451,8 @@ bool FlipIt::DynamicFaults::injectFault(Instruction* I) {
     */
     if (ret) {
         // Site #,   injection type, comment, inst
+        logfile->logInst(faultIdx++, injectionType, comment, I);
+#ifdef OLD_WAY        
         errs() << '#' << faultIdx++ << '\t' << injectionType << '\t' << comment  << "\t";
         if (MDNode *N = I->getMetadata("dbg")) {
             DILocation Loc(N);
@@ -1389,6 +1463,7 @@ bool FlipIt::DynamicFaults::injectFault(Instruction* I) {
         } else {
             errs() << *I << '\n';
         }
+#endif
     }
     return ret;
 }
