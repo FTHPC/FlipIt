@@ -111,7 +111,7 @@ if (shouldInject(sys.argv, notInject)):
     step2 +=  fileNameBC + " -o " + fileName + ".crpt.bc"
     #step2 +=  fileNameBC + " " + filePath + "corrupt.bc" + " -o " + fileName + ".crpt.bc"
     #step3 += " < " + fileName + ".crpt.bc > " + fileName + ".final.bc 2> " + fileName + ".LLVM.txt"
-    step3 += " " + fileName + ".crpt.bc -o " + fileName + ".final.bc 2> " + fileName + ".LLVM.txt"
+    step3 += " -srcFile " + fileName + " " + fileName + ".crpt.bc -o " + fileName + ".final.bc "#2> " + fileName + ".LLVM.txt"
     step4 += "-O2  -c " + fileName + ".final.bc  -o "
 
     #name the object file what a normal compiler would name it

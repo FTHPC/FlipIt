@@ -22,10 +22,11 @@ main.o: main.c
 	$(CC) $(CFLAGS) -o main.o main.c
 
 clean:
-	rm -rf *.bc
-	rm -rf *.LLVM.txt
-	rm -rf *.o
-	rm -rf jacobi
+	rm -f *.bc
+	rm -f *.LLVM.bin
+	rm -f *.o
+	rm -f *.pyc
+	rm -f jacobi
 
 test-selection:
 	mpirun -n 4 ./jacobi --numberFaulty 1 --faulty 3
