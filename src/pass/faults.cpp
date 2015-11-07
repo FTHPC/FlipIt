@@ -192,10 +192,10 @@ bool FlipIt::DynamicFaults::viableFunction(std::string func, std::vector<std::st
     
     if (funcList.length() == 0
         || std::find(flist.begin(), flist.end(), func) != flist.end()) {
-        errs() << "\n\nFunction Name: " << func \
+        /*errs() << "\n\nFunction Name: " << func \
             << "\n-----------------------------------------------------------"\
             << "-------------------\n";
-        logfile->logFunctionHeader(faultIdx, func);
+        */logfile->logFunctionHeader(faultIdx, func);
         return true;
     }
     return false;
@@ -261,9 +261,7 @@ void FlipIt::DynamicFaults::readConfig(string path) {
 
 
 bool  FlipIt::DynamicFaults::finalize() {
-    printf("Closing file");
     logfile->close();
-    printf("deleting\n");
     //delete logfile;
     /*
     std::ofstream outfile;

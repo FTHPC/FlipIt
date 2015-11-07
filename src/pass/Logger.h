@@ -86,7 +86,6 @@ class LogFile
         // operand
         buffer[currSize++] = (char) I->getOpcode(); // Assumes < 255 insts
         
-        //printf("OldSite = %lu, site = %lu", oldSite, site);
         assert(oldSite + 1 == site && "Sites differ > 1.\n");
         // Type and info
         char type_info = (getType(injType) << INFO_SIZE) | getInfo(comment);
@@ -99,11 +98,6 @@ class LogFile
     inline bool needsWriting() { return currSize > 0; }
     void write() {
         if (needsWriting()) {
-            /*
-            printf("writing buff contexts\n");
-            for(int i=0; i<currSize; i++)
-                printf("%d\n", buffer[0]);
-            */
             outfile.write(buffer, currSize);
             currSize = 0;
         }
@@ -113,7 +107,6 @@ class LogFile
             if (needsWriting())
                 write();
                 outfile.close();
-                printf("File closed\n");
         }
     }
 
@@ -148,7 +141,6 @@ class LogFile
     }
     void logFileLocation(Instruction* I)
     {
-        errs() << "logging inst " << *I << "\n";
         unsigned short size = 0;
         unsigned short lineNum = 0;
         std::string location = "";
@@ -180,14 +172,12 @@ class LogFile
         }
         // file size if new file
         if (oldFile != location) {
-            errs() << "size = " << size << "\n";
             char* ptr = (char*)&(size);
             buffer[currSize++] = *ptr;
             buffer[currSize++] = *(ptr+1);
         }
 
         // line number
-        errs() << "line no = " << lineNum << "\n";
         char* ptr = (char*)&(lineNum);
         buffer[currSize++] = *ptr;
         buffer[currSize++] = *(ptr+1);
@@ -197,7 +187,6 @@ class LogFile
             if (currSize + location.size() > bufSize)
                 write();
             
-            errs() << "location = " << location << "\n";
             memcpy(buffer+currSize, location.c_str(), std::min((int)location.size(), (1 << 16) -1));
             currSize += std::min((int)location.size(), (1 << 16) -1);
         }
