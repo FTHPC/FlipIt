@@ -166,7 +166,7 @@ std::string FlipIt::DynamicFaults::demangle(std::string name)
     return demangled.find("(") == string::npos ? demangled : demangled.substr(0, demangled.find("("));
 }
 
-bool FlipIt::DynamicFaults::viableFunction(std::string func, std::vector<std::string> flist) {
+bool FlipIt::DynamicFaults::viableFunction(std::string func, std::vector<std::string>& flist) {
    
     /* verify func isn't a flipit runtime or a user specified
     non-inject function */
@@ -481,7 +481,7 @@ bool FlipIt::DynamicFaults::injectCall(Instruction* I) {
     return false;
 }
 
-bool FlipIt::DynamicFaults::inject_Store_Data(Instruction* I, std::vector<Value*> args, CallInst* CallI) {
+bool FlipIt::DynamicFaults::inject_Store_Data(Instruction* I, std::vector<Value*>& args, CallInst* CallI) {
     args.push_back(I->getOperand(0)); // value stored
 
     /*Integer Data*/
@@ -528,7 +528,7 @@ bool FlipIt::DynamicFaults::inject_Store_Data(Instruction* I, std::vector<Value*
     return true;
 }
 
-bool FlipIt::DynamicFaults::inject_Compare(Instruction* I, std::vector<Value*> args, CallInst* CallI) {
+bool FlipIt::DynamicFaults::inject_Compare(Instruction* I, std::vector<Value*>& args, CallInst* CallI) {
     /* select a random arg to corrupt because corrupting the result will yeild a
     50% chance of branching incorrectly */
     unsigned int opPos = rand() % 2;
@@ -613,7 +613,7 @@ bool FlipIt::DynamicFaults::inject_Compare(Instruction* I, std::vector<Value*> a
 }
 
 
-bool FlipIt::DynamicFaults::inject_Generic(Instruction* I, std::vector<Value*> args, CallInst* CallI,
+bool FlipIt::DynamicFaults::inject_Generic(Instruction* I, std::vector<Value*>& args, CallInst* CallI,
                                    BasicBlock* BB) {
     Instruction* INext = NULL;
     BasicBlock::iterator BI = *I;
@@ -719,7 +719,7 @@ bool FlipIt::DynamicFaults::inject_Generic(Instruction* I, std::vector<Value*> a
 }
 
 
-bool FlipIt::DynamicFaults::inject_Store_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI) {
+bool FlipIt::DynamicFaults::inject_Store_Ptr(Instruction* I, std::vector<Value*>& args, CallInst* CallI) {
 
     PtrToIntInst* p2iI = NULL;
     IntToPtrInst* i2pI = NULL;
@@ -805,7 +805,7 @@ bool FlipIt::DynamicFaults::inject_Store_Ptr(Instruction* I, std::vector<Value*>
     return true;
 }
 
-bool FlipIt::DynamicFaults::inject_Load_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB) {
+bool FlipIt::DynamicFaults::inject_Load_Ptr(Instruction* I, std::vector<Value*>& args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB) {
 
     Instruction* INext;
     PtrToIntInst* p2iI = NULL;
@@ -1010,7 +1010,7 @@ bool FlipIt::DynamicFaults::inject_Load_Ptr(Instruction* I, std::vector<Value*> 
     return true;
 }
 
-bool FlipIt::DynamicFaults::inject_Alloc_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB) {
+bool FlipIt::DynamicFaults::inject_Alloc_Ptr(Instruction* I, std::vector<Value*>& args, CallInst* CallI, BasicBlock::iterator BI,  BasicBlock* BB) {
 
     Instruction* INext = NULL;
     PtrToIntInst* p2iI = NULL;
@@ -1207,7 +1207,7 @@ int FlipIt::DynamicFaults::selectArgument(CallInst* callInst) {
     return arg;
 }
 
-bool FlipIt::DynamicFaults::inject_Call(Instruction* I, std::vector<Value*> args, CallInst* CallI,
+bool FlipIt::DynamicFaults::inject_Call(Instruction* I, std::vector<Value*>& args, CallInst* CallI,
                                 BasicBlock::iterator BI,  BasicBlock* BB) {
     PtrToIntInst* p2iI = NULL;
     IntToPtrInst* i2pI = NULL;
@@ -1285,7 +1285,7 @@ bool FlipIt::DynamicFaults::inject_Call(Instruction* I, std::vector<Value*> args
     return true;
 }
 
-bool FlipIt::DynamicFaults::inject_GetElementPtr_Ptr(Instruction* I, std::vector<Value*> args,
+bool FlipIt::DynamicFaults::inject_GetElementPtr_Ptr(Instruction* I, std::vector<Value*>& args,
                                              CallInst* CallI, BasicBlock::iterator BI,
                                              BasicBlock* BB) {
     Instruction* INext = NULL;
