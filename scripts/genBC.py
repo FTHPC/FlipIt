@@ -21,10 +21,11 @@ import subprocess
 import string
 
 FLIPIT_PATH = os.environ['FLIPIT_PATH']
+LLVM_BUILD_PATH = os.environ['LLVM_BUILD_PATH']
 # compile corrupt.c to LLVM bitcode
-os.system("clang -emit-llvm -c -o tmp.bc " + FLIPIT_PATH +"/src/corrupt/corrupt.c")
+os.system(LLVM_BUILD_PATH + "/bin/clang -emit-llvm -c -o tmp.bc " + FLIPIT_PATH +"/src/corrupt/corrupt.c")
 
-cmd = ["llvm-link", "-d", "tmp.bc"]
+cmd = [LLVM_BUILD_PATH + "/bin/llvm-link", "-d", "tmp.bc"]
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 out, err = p.communicate()
 
@@ -52,5 +53,5 @@ for l in err.split("\n"):
 				outfile.write(l +"\n")
 outfile.close()
 
-os.system("clang -emit-llvm -c -o " + FLIPIT_PATH + "/src/corrupt/corrupt.bc " + FLIPIT_PATH+"/src/corrupt/corrupt.ll")
+os.system(LLVM_BUILD_PATH + "/bin/clang -emit-llvm -c -o " + FLIPIT_PATH + "/src/corrupt/corrupt.bc " + FLIPIT_PATH+"/src/corrupt/corrupt.ll")
 os.system("rm tmp.bc")

@@ -16,10 +16,10 @@ long: matmul.o main.o
 	$(CC) -o long matmul.o main.o $(LFLAGS)
 
 matmul.o: matmul.c
-	clang $(CFLAGS) -emit-llvm matmul.c  -c -o matmul.bc 
-	llvm-link $(FLIPIT_PATH)/include/FlipIt/corrupt/corrupt.bc matmul.bc  -o crpt_matmul.bc
-	opt -load $(FIPASS) -FlipIt -srcFile matmul.c -config FlipIt.config -singleInj 1 -prob 1e-8 -byte -1 -arith 1 -ctrl 1 -ptr 1 -funcList "" crpt_matmul.bc -o final.bc
-	clang  -c final.bc -o matmul.o
+	$(LLVM_BUILD_PATH)/bin/clang $(CFLAGS) -emit-llvm matmul.c  -c -o matmul.bc 
+	$(LLVM_BUILD_PATH)/bin/llvm-link $(FLIPIT_PATH)/include/FlipIt/corrupt/corrupt.bc matmul.bc  -o crpt_matmul.bc
+	$(LLVM_BUILD_PATH)/bin/opt -load $(FIPASS) -FlipIt -srcFile matmul.c -config FlipIt.config -singleInj 1 -prob 1e-8 -byte -1 -arith 1 -ctrl 1 -ptr 1 -funcList "" crpt_matmul.bc -o final.bc
+	$(LLVM_BUILD_PATH)/bin/clang  -c final.bc -o matmul.o
 
 main.o: main.c
 	$(CC) $(CFLAGS) -o main.o -c main.c

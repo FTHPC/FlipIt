@@ -27,10 +27,10 @@ echo "int work(int a, int b)
 
 
 
-clang  -g -emit-llvm work.c  -c -o work.bc 
-llvm-link $FLIPIT_PATH/include/FlipIt/corrupt/corrupt.bc work.bc  -o crpt_work.bc
-opt -load $FLIPIT_PATH/lib/libFlipItPass.so -FlipIt -srcFile "work.c" -singleInj 1 -prob 0.95 -byte -1 -arith 1 -ctrl 0 -ptr 0 -funcList "" crpt_work.bc  -o final.bc
-clang  -g -c final.bc -o final.o  
+$LLVM_BUILD_PATH/bin/clang  -g -emit-llvm work.c  -c -o work.bc 
+$LLVM_BUILD_PATH/bin/llvm-link $FLIPIT_PATH/include/FlipIt/corrupt/corrupt.bc work.bc  -o crpt_work.bc
+$LLVM_BUILD_PATH/bin/opt -load $FLIPIT_PATH/lib/libFlipItPass.so -FlipIt -srcFile "work.c" -singleInj 1 -prob 0.95 -byte -1 -arith 1 -ctrl 0 -ptr 0 -funcList "" crpt_work.bc  -o final.bc
+$LLVM_BUILD_PATH/bin/clang  -g -c final.bc -o final.o  
 
 gcc -o main.o -c main.c
 gcc -o test final.o main.o -L$FLIPIT_PATH/lib/ -lcorrupt
