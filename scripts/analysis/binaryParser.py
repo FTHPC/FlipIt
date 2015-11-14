@@ -1,5 +1,6 @@
 import struct
 
+NEW_FILE_MASK = 0x8000
 currSize = 0
 def unpack(binary, fmt, size = None):
     """Reads a value from a binary file 'binary'.
@@ -206,9 +207,12 @@ def parseBinaryLogFile(c, filename, outfile = None):
     """
 
     if outfile != None:
-        name = filename
-        if name[-3:] == "bin":
-            name = name[0:-3] + "txt"
+        name = outfile
+        if name == "":
+            name = filename
+            if name[-3:] == "bin":
+                name = name[0:-3] + "txt"
+            
         outfile = open(name, "w")
     with open(filename, "rb") as f:
         logfile = f.read()
@@ -226,23 +230,26 @@ def parseBinaryLogFile(c, filename, outfile = None):
             if opcode != 255: 
                 # opcode(1 byte), Types/Info(1 byte [3,5 bits]), Location (2+ bytes)
                 info_type = unpack(logfile, 'B')
-                info = info_type >> 5
-                ty = info_type & 0x1F
+                ty = info_type >> 5
+                info = info_type & 0x1F
                 lineNum = unpack(logfile, 'H')
-                #print "opcode= ", opcode, " info= ", info, " ty= ", ty, " size= ", size
+                #print "opcode= ", opcode, " info= ", info, " ty= ", ty, " lineNum= ", lineNum
                 msg = "\n#" + str(siteIdx) + "\t" + opcode2Str(opcode) + "\t" + info2Str(info, opcode2Str(opcode))\
                     + "\t" + type2Str(ty)
                 
                 # if the MSB bit in lineNum is set then lineNum is the size of
                 # a new filename string and we must read a new lineNum
-                if lineNum & 0x80 != 0:
-                    size = lineNum & 0x7F
+                #print "AND=", lineNum & NEW_FILE_MASK
+                if lineNum & NEW_FILE_MASK != 0:
+                    size = lineNum & 0x7FFF
                     lineNum = unpack(logfile, 'H', 2)
-                    #print "new file: ", unpack(logfile, 's', size & 0x7F)
                     srcFile = unpack(logfile, 's', size)
-                msg += "\t" + srcFile + ":" + str(lineNum)  
-                
-                c.execute("INSERT INTO sites VALUES (?,?,?,?,?,?,?)", (siteIdx, type, comment, file, funcName, srcLine, opcode))
+                    #print "size=", size, " new file: ", srcFile, ":", lineNum #unpack(logfile, 's', size & 0x7F)
+                #else:
+                #    print "old file: ", srcFile, ":", lineNum
+                msg += "\t" + srcFile + ":" + str(lineNum)
+                if c != None:                
+                    c.execute("INSERT INTO sites VALUES (?,?,?,?,?,?,?)", (siteIdx, type, comment, file, funcName, lineNum, opcode))
                 if outfile != None:
                     outfile.write(msg)
                 siteIdx += 1

@@ -12,7 +12,7 @@ using namespace llvm;
 
 #define INFO_SIZE 5
 #define TYPE_SIZE 3
-
+short NEW_FILE_MASK = 0x8000;
 typedef enum {
     ARITHMETIC_FP = 0,
     POINTER,
@@ -56,6 +56,7 @@ class LogFile
 
     void logFunctionHeader(unsigned long site, std::string name)
     {
+        //errs() << "\n\n" << name << "\n";
         // make sure we have enough room
         if (currSize + name.size() + 1 + sizeof(site) > bufSize)
             write();
@@ -85,7 +86,9 @@ class LogFile
         
         // operand
         buffer[currSize++] = (char) I->getOpcode(); // Assumes < 255 insts
-        
+       
+        //errs() << site << " " << (int)I->getOpcode() << " " << (int)getType(injType)
+        //        << " " << (int)getInfo(comment) << "(" << comment << ") ";  
         assert(oldSite + 1 == site && "Sites differ > 1.\n");
         // Type and info
         char type_info = (getType(injType) << INFO_SIZE) | getInfo(comment);
@@ -158,13 +161,13 @@ class LogFile
 #endif
             if (oldFile != location) {
                 size = location.size();
-                size |= 0x80; // set MSB
+                size |= NEW_FILE_MASK;//0x80; // set MSB
             }
         }
         else /* no debugging information */ {
             location = "__NF";
             if (oldFile != "__NF") {
-                size = 4 | 0x80;
+                size = 4 | NEW_FILE_MASK;//0x80;
             }
             else /* no prev dbg info */ {
                 // nothing...
@@ -181,9 +184,8 @@ class LogFile
         char* ptr = (char*)&(lineNum);
         buffer[currSize++] = *ptr;
         buffer[currSize++] = *(ptr+1);
-
         // file name if need be
-        if (size & 0x80) {
+        if (size & NEW_FILE_MASK) {
             if (currSize + location.size() > bufSize)
                 write();
             
@@ -191,6 +193,7 @@ class LogFile
             currSize += std::min((int)location.size(), (1 << 16) -1);
         }
         oldFile = location;
+        //errs() << size << " " << lineNum << " " << location << "\n";
     }
 
 
