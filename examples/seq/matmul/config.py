@@ -8,6 +8,8 @@
 #    ptr - add code to inject into pointers (0 or 1)
 #    arith - add code to inject into mathematics (0 or 1)
 #    ctrl - add code to inject into control (0 or 1)
+#    stateFile - unique counter for fault site index;
+#                should differ based on application
 #
 #####################################################
 
@@ -19,6 +21,7 @@ singleInj = 1
 ptr = 1
 arith = 1
 ctrl = 1
+stateFile = "matmul"
 
 ############# Library Parameters #####################
 #

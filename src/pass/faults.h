@@ -38,6 +38,7 @@
 
 #include "Logger.h"
 
+
 #include <llvm/Pass.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/IR/Function.h>
@@ -73,6 +74,7 @@ static cl::opt<bool> arith_err("arith", cl::desc("Inject Faults Into Arithmetic 
 static cl::opt<bool> ctrl_err("ctrl", cl::desc("Inject Faults Into Control Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
 static cl::opt<bool> ptr_err("ptr", cl::desc("Inject Faults Into Pointer Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
 static cl::opt<string> srcFile("srcFile", cl::desc("Name of the source file being compiled"), cl::value_desc("e.g. foo.c, foo.cpp, or foo.f90"), cl::init("UNKNOWN"), cl::ValueRequired);
+static cl::opt<string> stateFile("stateFile", cl::desc("Name of the state file being updated when compiled. Used to provide unique fault site indexes."), cl::value_desc("FlipItState"), cl::init("FlipItState"), cl::ValueRequired);
 #endif
 
 
@@ -93,16 +95,17 @@ namespace FlipIt {
             bool ctrl_err;
             bool ptr_err;
             std::string srcFile;
+            std::string stateFile;
 #endif
         public:
             static char ID; 
 
 #ifdef COMPILE_PASS
             DynamicFaults(); 
-            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err, std::string srcFile, Module* M); 
+            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err, std::string srcFile, std::string stateFile, Module* M); 
 #else
             DynamicFaults(Module* M); 
-            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err, std::string srcFile, Module* M); 
+            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err, std::string srcFile, std::string stateFile, Module* M); 
 
 #endif
             //~DynamicFaults()
@@ -116,7 +119,7 @@ namespace FlipIt {
 
             void init();
             bool finalize();
-			std::vector<std::string> splitAtSpace(std::string spltStr);
+			void splitAtSpace();
             int selectArgument(CallInst* callInst);
             void readConfig(string path);
             double getInstProb(Instruction* I);
@@ -171,6 +174,7 @@ namespace FlipIt {
             unsigned int faultIdx;
             unsigned int displayIdx;
             unsigned int skipAmount;
+            std::vector<std::string> flist;
 
     };/*end class definition*/
 }/*end namespace*/

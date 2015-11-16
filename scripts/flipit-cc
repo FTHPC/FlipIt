@@ -72,7 +72,8 @@ if (shouldInject(sys.argv, notInject)):
         + " -ptr " + str(ptr) \
         + " -ctrl " + str(ctrl) \
         + " -arith " + str(arith) \
-        + " -funcList " + funcList
+        + " -funcList " + funcList \
+        + " -stateFile " + stateFile
     step4 = LLVM_BUILD_PATH + "/bin/clang " 
     fileName = ""
     fileNameBC = ""
