@@ -20,10 +20,11 @@
 #include "llvm/Support/raw_ostream.h"
 #include <llvm/Support/CommandLine.h>
 #include "llvm/IR/Instruction.h"
-#include <llvm/Support/InstIterator.h>
+//#include <llvm/Support/InstIterator.h>
+#include <llvm/IR/InstIterator.h>
 using namespace llvm;
 
-#include "../FlipIt/faults.h"
+#include "FlipIt/pass/faults.h"
 using namespace FlipIt;
 
 

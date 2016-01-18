@@ -19,7 +19,7 @@ LDFLAGS = $(shell $(LLVM_CONFIG) --ldflags)
 ifeq ($(shell uname),Darwin)
 SHARED_LIB_OPT  = -bundle -undefined dynamic_lookup
 else
-SHARED_LIB_OPT  = -shared -Wl, -O1
+SHARED_LIB_OPT  = -shared -Wl,
 endif
 
 all: libFlipItPass.so libFlipIt.so

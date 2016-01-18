@@ -1,19 +1,33 @@
-# Makefile for hello pass
+# Makefile for Foo pass
 
-# Path to top level of LLVM hierarchy
-LEVEL = ../../..
+#####################################################################
+#
+# This file is licensed under the University of Illinois/NCSA Open 
+# Source License. See LICENSE.TXT for details.
+#
+#####################################################################
 
-# Name of the library to build
-LIBRARYNAME = Foo
+CXX=$(LLVM_BUILD_PATH)/bin/clang
+LLVM_CONFIG=$(LLVM_BUILD_PATH)/bin/llvm-config
 
-# Make the shared library become a loadable module so the tools can
-# dlopen/dlsym on the resulting library.
-LOADABLE_MODULE = 1
-#SHARED_LIBRARY = 1
-#BUILD_ARCHIVE = 1
+CXXFLAGS= -Wall -O2 -g -std=c++11 -fno-rtti -I$(FLIPIT_PATH)/include
+CXXFLAGS += $(shell $(LLVM_CONFIG) --cxxflags) -fPIC 
+#CXXFLAGS += -DCOMPILE_PASS 
 
-# Include the makefile implementation stuff
-include $(LEVEL)/Makefile.common
+LDFLAGS = $(shell $(LLVM_CONFIG) --ldflags) -L$(FLIPIT_PATH)/lib -lFlipIt
 
-# Add linkage such that Foo can call FlipIt to corrupt instructions
-LIBS += -L /home/aperson40/research/build//Debug+Asserts/lib/ -lFlipIt
+ifeq ($(shell uname),Darwin)
+SHARED_LIB_OPT  = -bundle -undefined dynamic_lookup
+else
+SHARED_LIB_OPT  = -shared -Wl, -O1
+endif
+
+all: libFooPass.so
+
+libFooPass.so:foo.cpp
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(SHARED_LIB_OPT) $<
+
+
+clean:
+	rm -rf *.o *.so
+

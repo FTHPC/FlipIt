@@ -1,6 +1,6 @@
 #include "stdio.h"
 #include <stdlib.h>
-#include "/path/to/flipit/src/corrupt/corrupt.h"
+#include "/home/aperson40/research/FlipIt//src/corrupt/corrupt.h"
 
 int work() {
     int a = 3;
