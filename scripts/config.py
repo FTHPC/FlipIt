@@ -30,6 +30,8 @@ BUILD_TYPE = "Debug+Asserts"
 #    ptr - add code to inject into pointers (0 or 1)
 #    arith - add code to inject into mathematics (0 or 1)
 #    ctrl - add code to inject into control (0 or 1)
+#    stateFile - unique counter for fault site index;
+#                should differ based on application
 #
 #####################################################
 config = "FlipIt.config"
@@ -40,18 +42,19 @@ singleInj = 1
 ptr = 1
 arith = 1
 ctrl = 1
+stateFile = "FlipItState"
 
 ############# Library Parameters #####################
 #
 #    FLIPIT_PATH - Path to FlipIt repo
 #    LLVM_BULID_PATH - Path to LLVM build directory
-#    SHOW - libraries and paths wraped by mpicc 
+#    SHOW - libraries and paths wraped by mpicc
 #
 #####################################################
 
 import os
-FLIPIT_PATH = os.environ['FLIPIT_PATH'] 
-LLVM_BUILD_PATH = os.environ['LLVM_BUILD_PATH'] 
+FLIPIT_PATH = os.environ['FLIPIT_PATH']
+LLVM_BUILD_PATH = os.environ['LLVM_BUILD_PATH']
 SHOW = ""
 
 
@@ -62,5 +65,5 @@ notInject = [" ", " "]
 cc = "mpicc"
 
 ############ Verbose compiler output ################
-verbose = False 
+verbose = True
 

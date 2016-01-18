@@ -119,9 +119,6 @@ bool FlipIt::DynamicFaults::runOnModule(Module &Mod) {
 
     //Module::FunctionListType &functionList = M.getFunctionList();
     //vector<std::string> flist = splitAtSpace(funcList);
-    //vector<std::string> flist = splitAtSpace(funcList);
-
-
     init();
 
 
@@ -199,10 +196,6 @@ bool FlipIt::DynamicFaults::viableFunction(std::string func, std::vector<std::st
     
     if (funcList.length() == 0
         || std::find(flist.begin(), flist.end(), func) != flist.end()) {
-        /*errs() << "\n\nFunction Name: " << func \
-            << "\n-----------------------------------------------------------"\
-            << "-------------------\n";
-        *///logfile->logFunctionHeader(faultIdx, func);
         return true;
     }
     return false;
@@ -294,9 +287,7 @@ vector<string> FlipIt::DynamicFaults::splitAtSpace(string spltStr) {
     std::vector<std::string> strLst;
     std::istringstream isstr(spltStr);
     copy(std::istream_iterator<std::string>(isstr), std::istream_iterator<std::string>(),
-	   std::back_inserter<std::vector<std::string> >(strLst));
-
-    return strLst;
+	   std::back_inserter<std::vector<std::string> >(flist));
 }
 */
 Value* FlipIt::DynamicFaults::getInstProb(Instruction* I) {
@@ -322,7 +313,6 @@ unsigned long FlipIt::DynamicFaults::updateStateFile(const char* stateFile, unsi
 
     // grab lock
     string homePath(getenv("FLIPIT_PATH"));
-    //string homePath(getenv("HOME"));
     string lockPath = homePath + "/.lock";
     int fd = open(lockPath.c_str(), O_RDWR | O_CREAT, 0666);
     while (flock(fd, LOCK_EX | LOCK_NB)) {}

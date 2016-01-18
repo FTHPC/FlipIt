@@ -8,7 +8,8 @@
 
 echo "
 #include <stdio.h>
-#include \"$FLIPIT_PATH/src/corrupt/corrupt.h\"
+#include \"FlipIt/corrupt/corrupt.h\"
+
 int main(int argc, char** argv)
 {
 	int a = 2, b=2;
@@ -26,12 +27,17 @@ echo "int work(int a, int b)
 }" > work.c
 
 
+# compile work.c
+$LLVM_BUILD_PATH/bin/clang  -g -emit-llvm work.c  -c -o work.bc 
+$LLVM_BUILD_PATH/bin/llvm-link $FLIPIT_PATH/include/FlipIt/corrupt/corrupt.bc work.bc  -o crpt_work.bc
+$LLVM_BUILD_PATH/bin/opt -load $FLIPIT_PATH/lib/libFlipItPass.so -FlipIt -srcFile "work.c" -singleInj 1 -prob 0.95 -byte -1 -arith 1 -ctrl 0 -ptr 0 -funcList "" crpt_work.bc  -o final.bc
+$LLVM_BUILD_PATH/bin/clang  -g -c final.bc -o final.o  
 
-clang  -g -emit-llvm work.c  -c -o work.bc 
-llvm-link $FLIPIT_PATH/include/FlipIt/corrupt/corrupt.bc work.bc  -o crpt_work.bc
-opt -load $FLIPIT_PATH/lib/libFlipItPass.so -FlipIt -srcFile "work.c" -singleInj 1 -prob 0.95 -byte -1 -arith 1 -ctrl 0 -ptr 0 -funcList "" crpt_work.bc  -o final.bc
-clang  -g -c final.bc -o final.o  
+# display the compiler log file for work.LLVM.txt
+$FLIPIT_PATH/scripts/binary2ascii.py work.c.LLVM.bin -o work.c.LLVM.txt
+cat work.c.LLVM.txt
 
-gcc -o main.o -c main.c
+# build the executable
+gcc -I$FLIPIT_PATH/include -o main.o -c main.c
 gcc -o test final.o main.o -L$FLIPIT_PATH/lib/ -lcorrupt
 ./test

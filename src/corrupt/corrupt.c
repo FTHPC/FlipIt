@@ -29,7 +29,7 @@ static unsigned long FLIPIT_TotalInsts = 0;
 /*Fault Injection Statistics*/
 static unsigned long* FLIPIT_Histogram;
 static int FLIPIT_MAX_LOC = 20000;
-
+static char* FLIPIT_StateFile = NULL;
 /* MPI injections */
 static int FLIPIT_Rank = 0;                   
 static int FLIPIT_RankInject = 0;
@@ -55,23 +55,20 @@ static void flipit_countdownLogger(FILE*);
 /***********************************************************************************************/
 
 void FLIPIT_Init(int myRank, int argc, char** argv, unsigned long long seed) {
-    char* home, *path;
     FILE* infile;
     FLIPIT_Rank = myRank;
-    int ammount;
+    int amount;
     flipit_parseArgs(argc, argv);
 
     if (FLIPIT_Rank == 0)
         printf("Fault injector seed: %llu\n", seed+myRank);
     
-    home = getenv("HOME");
-    path = (char*) malloc(strlen(home) + strlen("/.FlipItState")+1);
-    strcpy(path, home);
-    strcat(path, "/.FlipItState");
-    infile = fopen(path, "r");
+    infile = fopen(FLIPIT_StateFile, "r");
     
     if (infile) {
-        ammount = fscanf(infile, "%d", &FLIPIT_MAX_LOC);
+        fscanf(infile, "%d", &amount);
+        if (amount > FLIPIT_MAX_LOC)
+            FLIPIT_MAX_LOC = amount;
         fclose(infile);
     }
     FLIPIT_Histogram = (unsigned long*) calloc(FLIPIT_MAX_LOC, sizeof(unsigned long));
@@ -217,12 +214,24 @@ static void flipit_parseArgs(int argc, char** argv) {
                 FLIPIT_FaultSites[j] = atoi(argv[i + j + 1]);
             i += j;
         }
+        else if (strcmp("--stateFile", argv[i]) == 0 || strcmp("-sF", argv[i]) == 0) {
+            int len = strlen(argv[i]) + 1;
+            FLIPIT_StateFile = (char*) malloc(sizeof(char)*len);
+            strcpy(FLIPIT_StateFile, argv[i]);
+        }
     }
 
+    // verify variables have valid values
     if (numFaulty == -1){
         FLIPIT_RankInject = 1;
     }
+    if (FLIPIT_StateFile == NULL) {
+        char* home = getenv("HOME");
+        FLIPIT_StateFile = (char*) malloc(strlen(home) + strlen("/.FlipItState")+1);
+        strcpy(FLIPIT_StateFile, home);
+        strcat(FLIPIT_StateFile, "/.FlipItState");
 
+    }
     #ifdef FLIPIT_DEBUG
         if(FLIPIT_Rank == 0)
         {

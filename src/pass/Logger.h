@@ -57,6 +57,7 @@ class LogFile
 
     void logFunctionHeader(unsigned long site, std::string name)
     {
+        //errs() << "\n\n" << name << "\n";
         // make sure we have enough room
         if (currSize + name.size() + 1 + sizeof(site) > bufSize)
             write();
@@ -86,7 +87,9 @@ class LogFile
         
         // operand
         buffer[currSize++] = (char) I->getOpcode(); // Assumes < 255 insts
-        
+       
+        //errs() << site << " " << (int)I->getOpcode() << " " << (int)getType(injType)
+        //        << " " << (int)getInfo(comment) << "(" << comment << ") ";  
         assert(oldSite + 1 == site && "Sites differ > 1.\n");
         // Type and info
         char type_info = (getType(injType) << INFO_SIZE) | getInfo(comment);
@@ -182,7 +185,6 @@ class LogFile
         char* ptr = (char*)&(lineNum);
         buffer[currSize++] = *ptr;
         buffer[currSize++] = *(ptr+1);
-
         // file name if need be
         if (size & NEW_FILE_MASK) {
             if (currSize + location.size() > bufSize)
@@ -192,6 +194,7 @@ class LogFile
             currSize += std::min((int)location.size(), (1 << 16) -1);
         }
         oldFile = location;
+        //errs() << size << " " << lineNum << " " << location << "\n";
     }
 
 

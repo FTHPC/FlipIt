@@ -7,8 +7,8 @@
 #
 #####################################################################
 
-CXX=clang
-LLVM_CONFIG=llvm-config
+CXX=$(LLVM_BUILD_PATH)/bin/clang
+LLVM_CONFIG=$(LLVM_BUILD_PATH)/bin/llvm-config
 
 CXXFLAGS= -Wall -O2 -g -std=c++11 -fno-rtti -I$(FLIPIT_PATH)/include
 CXXFLAGS += $(shell $(LLVM_CONFIG) --cxxflags) -fPIC 

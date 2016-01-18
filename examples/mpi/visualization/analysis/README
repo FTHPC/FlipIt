@@ -1,0 +1,38 @@
+Information
+-----------
+
+Basic analysis scripts that combine injection site, source code, and runtime
+injection information to generate graphs about the fault injection campaign.
+The scripts read the compiler log files and run output files to store key
+information into a database that is used when visualizing the fault injection
+campaign.
+
+Such graphs include:
+    - Classification of injections based on instruction type
+    - Percent of injections based on function (includes type information
+    - Signals generated
+    - Trials with detection (includes bit locations and types)
+    - Latency of detection
+    - Trials that unexpectedly terminate (includes bit locations and types)
+
+The scripts are extensible with user defined functions placed in 'custom.py'.
+The user can collect information from the run output files being parsed,
+e.g. application progress, SDC detector performance, by extending the
+database's tables or creating their own, and visualize their data, or
+combine data that is already collected into new visualizations.
+
+
+
+
+Usage
+-----
+
+These scripts depend on 'numpy', 'matplotlib', and 'sqlite3'.
+
+To use these scripts:
+
+    1.) modify 'analysis_config.py'
+    2.) python 'main.py'
+
+
+

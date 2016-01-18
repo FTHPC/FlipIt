@@ -53,12 +53,11 @@
 #include <llvm/IR/InstIterator.h>
 #include <llvm/PassManager.h>
 #include <llvm/IR/CallingConv.h>
-#include <llvm/IR/Verifier.h>
- 
-#include <llvm/IR/DebugInfo.h>
+#include <llvm/Analysis/Verifier.h>
+#include <llvm/Assembly/PrintModulePass.h>
+#include <llvm/DebugInfo.h>
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/TypeBuilder.h>
-
 
 using namespace llvm;
 
@@ -117,7 +116,7 @@ namespace FlipIt {
             void init();
             bool finalize();
 			//std::vector<std::string> splitAtSpace(std::string spltStr);
-            void splitAtSpace();
+			void splitAtSpace();
             int selectArgument(CallInst* callInst);
             void readConfig(string path);
             Value* getInstProb(Instruction* I);
