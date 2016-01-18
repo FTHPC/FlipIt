@@ -1,5 +1,6 @@
 import struct
 
+NEW_FILE_MASK = 0x8000
 currSize = 0
 def unpack(binary, fmt, size = None):
     """Reads a value from a binary file 'binary'.
@@ -18,7 +19,11 @@ def unpack(binary, fmt, size = None):
     value = None
 
     if fmt == 'B':
+        #print len(binary)
+        #print "reading byte[", currSize, "] = ", binary[currSize]
+        #tmplue = struct.unpack(fmt, binary[currSize])[0]
         value = struct.unpack(fmt, binary[currSize])[0]
+        #value = struct.unpack(fmt, binary[currSize])[0]
         currSize += 1
     elif fmt == 'H':
         value = struct.unpack(fmt, binary[currSize:currSize+2])[0]
@@ -205,54 +210,73 @@ def parseBinaryLogFile(c, filename, outfile = None):
         use the extension .txt
     """
 
+    global currSize
+    currSize = 0
     if outfile != None:
-        name = filename
-        if name[-3:] == "bin":
-            name = name[0:-3] + "txt"
+        name = outfile
+        if name == "":
+            name = filename
+            if name[-3:] == "bin":
+                name = name[0:-3] + "txt"
+            
         outfile = open(name, "w")
     with open(filename, "rb") as f:
         logfile = f.read()
+        #print logfile
         fileVersion =  unpack(logfile, 'B')
         nameSize = unpack(logfile, 'H')
         srcFile = unpack(logfile, 's', nameSize)
         siteIdx = 0
+        funcName = ""
+
+
         if outfile != None:
             outfile.write("File Version #: "+ str(fileVersion))
             outfile.write("\nFile Name: " + str(srcFile))
 
         # loop over all functions and fault locations
         while currSize < len(logfile): # for rest of file
+            #print "GET OPCODE"
             opcode = unpack(logfile, 'B') #read function header
             if opcode != 255: 
                 # opcode(1 byte), Types/Info(1 byte [3,5 bits]), Location (2+ bytes)
                 info_type = unpack(logfile, 'B')
-                info = info_type >> 5
-                ty = info_type & 0x1F
+                ty = info_type >> 5
+                info = info_type & 0x1F
                 lineNum = unpack(logfile, 'H')
-                #print "opcode= ", opcode, " info= ", info, " ty= ", ty, " size= ", size
+                comment = info2Str(info, opcode2Str(opcode))
+                #print "opcode= ", opcode, " info= ", info, " ty= ", ty, " lineNum= ", lineNum
                 msg = "\n#" + str(siteIdx) + "\t" + opcode2Str(opcode) + "\t" + info2Str(info, opcode2Str(opcode))\
                     + "\t" + type2Str(ty)
                 
                 # if the MSB bit in lineNum is set then lineNum is the size of
                 # a new filename string and we must read a new lineNum
-                if lineNum & 0x80 != 0:
-                    size = lineNum & 0x7F
+                #print "AND=", lineNum & NEW_FILE_MASK
+                if lineNum & NEW_FILE_MASK != 0:
+                    size = lineNum & 0x7FFF
                     lineNum = unpack(logfile, 'H', 2)
-                    #print "new file: ", unpack(logfile, 's', size & 0x7F)
                     srcFile = unpack(logfile, 's', size)
-                msg += "\t" + srcFile + ":" + str(lineNum)  
-                
-                c.execute("INSERT INTO sites VALUES (?,?,?,?,?,?,?)", (siteIdx, type, comment, file, funcName, srcLine, opcode))
+                    #print "size=", size, " new file: ", srcFile, ":", lineNum #unpack(logfile, 's', size & 0x7F)
+                #else:
+                #    print "old file: ", srcFile, ":", lineNum
+                msg += "\t" + srcFile + ":" + str(lineNum)
+                if c != None:                
+                    #print msg
+                    c.execute("INSERT INTO sites VALUES (?,?,?,?,?,?,?)", (siteIdx, type2Str(ty), comment, srcFile, funcName, lineNum, opcode))
                 if outfile != None:
                     outfile.write(msg)
                 siteIdx += 1
             else: # start of function
                 size = unpack(logfile, 'B')
+                funcName = unpack(logfile, 's', size)
                 if outfile != None:
-                    outfile.write("\n\nFunction Name: " + unpack(logfile, 's', size))
+                    #funcName = unpack(logfile, 's', size)
+                    outfile.write("\n\nFunction Name: " + funcName)
                     outfile.write("\n------------------------------------------------------------------------------")
+                #print funcName
                 siteIdx = unpack(logfile, 'L')
                 #print "Fault Site Idx: ", siteIdx
+            #print currSize
 
     if outfile != None:
         outfile.write("\n")

@@ -26,6 +26,16 @@ cd $FLIPIT_PATH/scripts/
 #cd $LLVM_BUILD_PATH/lib/Transforms/FlipIt
 #./createPass.sh
 
+
+echo "
+
+Copying headers to include dir"
+cd $FLIPIT_PATH
+mkdir -p -v include/FlipIt/corrupt
+mkdir -p -v include/FlipIt/pass
+cp src/pass/faults.h include/FlipIt/pass/
+cp src/pass/Logger.h include/FlipIt/pass/
+
 cd $FLIPIT_PATH/src/pass
 make -f Makefile
 mkdir $FLIPIT_PATH/lib/
@@ -76,8 +86,5 @@ echo "
 
 Copying headers to include dir"
 cd $FLIPIT_PATH
-mkdir -p -v include/FlipIt/corrupt
-mkdir -p -v include/FlipIt/pass
-cp src/corrupt/corrupt.h include/FlipIt/corrupt/
+cp src/corrupt/*.h include/FlipIt/corrupt/
 cp src/corrupt/corrupt.bc include/FlipIt/corrupt/
-cp src/pass/faults.h include/FlipIt/pass/

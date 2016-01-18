@@ -10,7 +10,7 @@
 CXX=clang
 LLVM_CONFIG=llvm-config
 
-CXXFLAGS= -Wall -O2 -g -std=c++11 -fno-rtti
+CXXFLAGS= -Wall -O2 -g -std=c++11 -fno-rtti -I$(FLIPIT_PATH)/include
 CXXFLAGS += $(shell $(LLVM_CONFIG) --cxxflags) -fPIC 
 #CXXFLAGS += -DCOMPILE_PASS 
 
@@ -22,9 +22,11 @@ else
 SHARED_LIB_OPT  = -shared -Wl,
 endif
 
+#all: libFlipItPass.so
 all: libFlipItPass.so libFlipIt.so
 
 libFlipItPass.so:faults.cpp
+#libFlipItPass.so:faults_new.cpp
 	$(CXX) $(CXXFLAGS) -DCOMPILE_PASS $(LDFLAGS) -o $@ $(SHARED_LIB_OPT) $<
 
 libFlipIt.so:faults.cpp

@@ -12,6 +12,7 @@ using namespace llvm;
 
 #define INFO_SIZE 5
 #define TYPE_SIZE 3
+short NEW_FILE_MASK = 0x8000;
 
 typedef enum {
     ARITHMETIC_FP = 0,
@@ -158,13 +159,13 @@ class LogFile
 #endif
             if (oldFile != location) {
                 size = location.size();
-                size |= 0x80; // set MSB
+                size |= NEW_FILE_MASK;//0x80; // set MSB
             }
         }
         else /* no debugging information */ {
             location = "__NF";
             if (oldFile != "__NF") {
-                size = 4 | 0x80;
+                size = 4 | NEW_FILE_MASK;//0x80;
             }
             else /* no prev dbg info */ {
                 // nothing...
@@ -183,7 +184,7 @@ class LogFile
         buffer[currSize++] = *(ptr+1);
 
         // file name if need be
-        if (size & 0x80) {
+        if (size & NEW_FILE_MASK) {
             if (currSize + location.size() > bufSize)
                 write();
             
