@@ -21,7 +21,7 @@ echo "
 ############ COMPILING main.c ############
 
 "
-$LLVM_BUILD_PATH/bin/clang -g -I$(FLIPIT_PATH)/include -emit-llvm -o main.bc -c main.c
+$LLVM_BUILD_PATH/bin/clang -g -I$FLIPIT_PATH/include -emit-llvm -o main.bc -c main.c
 $LLVM_BUILD_PATH/bin/llvm-link $FLIPIT_PATH/src/corrupt/corrupt.bc main.bc  -o crpt.bc
 $LLVM_BUILD_PATH/bin/opt -load ./libFooPass.so -Foo crpt.bc -o final.bc
 $LLVM_BUILD_PATH/bin/clang final.bc -L$FLIPIT_PATH/lib -lcorrupt
