@@ -25,11 +25,11 @@ import subprocess
 #get location of LLVM header files
 LLVM_BUILD_PATH = os.environ['LLVM_BUILD_PATH']
 #LLVM_REPO_PATH = os.environ['LLVM_REPO_PATH']
-LLVM_REPO_PATH = subprocess.Popen(["llvm-config", "--includedir"],
-                            stdout=subprocess.PIPE).communicate()[0].strip()
-print LLVM_REPO_PATH
+LLVM_REPO_PATH = subprocess.Popen([LLVM_BUILD_PATH + "/bin/llvm-config",
+                 "--includedir"], stdout=subprocess.PIPE).communicate()[0].strip()
 if LLVM_REPO_PATH == "":
     LLVM_REPO_PATH = LLVM_BUILD_PATH + "/include/"
+
 # header files used by the complier pass in 'faults.h'
 # might should grab this information from 'faults.h' and build at runtime.
 flipitHeaders = {'Pass.h': "#include <llvm\/Pass.h>",\
@@ -57,7 +57,6 @@ flipitHeaders = {'Pass.h': "#include <llvm\/Pass.h>",\
 # replace header files in 'faults.h' with the correct headers for the version 
 #of LLVM at $LLVM_REPO_PATH
 filePath = sys.argv[1] #os.environ['FLIPIT_PATH'] + "/src/pass/faults.h"
-print LLVM_REPO_PATH + "/llvm"
 
 for path, subdirs, files in os.walk(LLVM_REPO_PATH + "/llvm"):
     for name in files:
