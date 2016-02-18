@@ -25,9 +25,12 @@ LLVM_BUILD_PATH = os.environ['LLVM_BUILD_PATH']
 # compile corrupt.c to LLVM bitcode
 os.system(LLVM_BUILD_PATH + "/bin/clang -emit-llvm -c -o tmp.bc " + FLIPIT_PATH +"/src/corrupt/corrupt.c")
 
-cmd = [LLVM_BUILD_PATH + "/bin/llvm-link", "-d", "tmp.bc"]
-p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-out, err = p.communicate()
+#doesn't work correctly on BW
+#cmd = [LLVM_BUILD_PATH + "/bin/llvm-link", "-d", "tmp.bc"]
+#p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+#out, err = p.communicate()
+os.system(LLVM_BUILD_PATH + "/bin/llvm-dis tmp.bc -o tmp.ll")
+err = open("tmp.ll").read()
 
 # extract the function signitures and other info needed for the header file
 # since they are defined in the IR we need to replace define with declare to make a header file
@@ -54,4 +57,4 @@ for l in err.split("\n"):
 outfile.close()
 
 os.system(LLVM_BUILD_PATH + "/bin/clang -emit-llvm -c -o " + FLIPIT_PATH + "/src/corrupt/corrupt.bc " + FLIPIT_PATH+"/src/corrupt/corrupt.ll")
-os.system("rm tmp.bc")
+os.system("rm tmp.bc tmp.ll")
