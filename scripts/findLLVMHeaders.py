@@ -48,14 +48,14 @@ flipitHeaders = {'Pass.h': "#include <llvm\/Pass.h>",\
         'Instructions.h': "#include <llvm\/IR\/Instructions.h>",\
         'raw_ostream.h': "#include <llvm\/Support\/raw_ostream.h>",\
         'Statistic.h': "#include <llvm\/ADT\/Statistic.h>",\
-        'MachineOperand.h': "#include <llvm\/CodeGen\/MachineOperand.h>",\
+        #'MachineOperand.h': "#include <llvm\/CodeGen\/MachineOperand.h>",\
         'CommandLine.h': "#include <llvm\/Support\/CommandLine.h>",\
-        'LoopPass.h': "#include <llvm\/Analysis\/LoopPass.h>",\
+        #'LoopPass.h': "#include <llvm\/Analysis\/LoopPass.h>",\
         'InstIterator.h': "#include <llvm\/IR\/InstIterator.h>",\
         'PassManager.h': "#include <llvm\/PassManager.h>",\
         'CallingConv.h': "#include <llvm\/IR\/CallingConv.h>",\
         'Verifier.h': "#include <llvm\/Analysis\/Verifier.h>",\
-        'PrintModulePass.h': "#include <llvm\/Assembly\/PrintModulePass.h>",\
+        #'PrintModulePass.h': "#include <llvm\/Assembly\/PrintModulePass.h>",\
         'DebugInfo.h': "#include <llvm\/DebugInfo.h>",\
         'Instruction.h': "#include <llvm\/IR\/Instruction.h>",\
         'TypeBuilder.h': "#include <llvm\/IR\/TypeBuilder.h>"}
