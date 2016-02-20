@@ -49,12 +49,10 @@
 #include <llvm/ADT/Statistic.h>
  
 #include <llvm/Support/CommandLine.h>
-#include <llvm/Analysis/LoopPass.h>
 #include <llvm/IR/InstIterator.h>
 #include <llvm/PassManager.h>
 #include <llvm/IR/CallingConv.h>
 #include <llvm/Analysis/Verifier.h>
-#include <llvm/Assembly/PrintModulePass.h>
 #include <llvm/DebugInfo.h>
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/TypeBuilder.h>

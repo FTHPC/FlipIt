@@ -43,14 +43,14 @@ mv *.so $FLIPIT_PATH/lib
 echo "Done!"
 
 # Modify examples have correct #inlcude "corrupt.h"
-echo "
-
-Updating headers in examples..."
+#echo "
+#
+#Updating headers in examples..."
 cd $FLIPIT_PATH
-sed -i '/#include "\/path\/to\/flipit\/src\/corrupt\/corrupt.h"/c\#include "'$FLIPIT_PATH'/src/corrupt/corrupt.h"'  ./examples/seq/matmul/main.c
-sed -i '/#include "\/path\/to\/flipit\/src\/corrupt\/corrupt.h"/c\#include "'$FLIPIT_PATH'/src/corrupt/corrupt.h"'  ./examples/mpi/jacobi/main.c
-sed -i '/#include "\/path\/to\/flipit\/src\/corrupt\/corrupt.h"/c\#include "'$FLIPIT_PATH'/src/corrupt/corrupt.h"'  ./examples/pass/Foo/main.c
-echo "Done!"
+#sed -i '/#include "\/path\/to\/flipit\/src\/corrupt\/corrupt.h"/c\#include "'$FLIPIT_PATH'/src/corrupt/corrupt.h"'  ./examples/seq/matmul/main.c
+#sed -i '/#include "\/path\/to\/flipit\/src\/corrupt\/corrupt.h"/c\#include "'$FLIPIT_PATH'/src/corrupt/corrupt.h"'  ./examples/mpi/jacobi/main.c
+#sed -i '/#include "\/path\/to\/flipit\/src\/corrupt\/corrupt.h"/c\#include "'$FLIPIT_PATH'/src/corrupt/corrupt.h"'  ./examples/pass/Foo/main.c
+#echo "Done!"
 
 # Build corrupting library
 #mkdir $FLIPIT_PATH/lib
