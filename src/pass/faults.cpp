@@ -209,6 +209,9 @@ void  FlipIt::DynamicFaults::init() {
     unsigned long sum = cacheFunctions();
 
     // TODO: get stateFile from config
+#ifndef COMPILE_PASS
+    sum = 0;
+#endif
     faultIdx = updateStateFile(stateFile.c_str(), sum);
     logfile = new LogFile(srcFile, faultIdx); 
     
@@ -339,7 +342,7 @@ unsigned long FlipIt::DynamicFaults::updateStateFile(const char* stateFile, unsi
     // clear the file cause the eof bit is reached
     file.clear();
     file.seekg(0, ios::beg);
-
+    //errs() << "startNum = " << startNum << " sum = " << sum << "\n";
     file << (startNum + sum);
     file.close();
 
@@ -776,7 +779,17 @@ unsigned long FlipIt::DynamicFaults::cacheFunctions() { //Module::FunctionListTy
 }
 
 bool FlipIt::DynamicFaults::corruptInstruction(Instruction* I) {
-    return injectFault(I);
+//errs() << "faultIdx = " << faultIdx << "\n";
+#ifndef COMPILE_PASS
+        std::vector<std::string> dummyVector;
+        if(!viableFunction(I->getParent()->getParent()->getName().str(),
+            dummyVector)) {
+            //errs() << "Returning false for function: " <<
+            //    I->getParent()->getParent()->getName().str() <<"\n";
+            return false;
+        }    
+#endif
+        return injectFault(I);
 }
 
 bool FlipIt::DynamicFaults::injectFault(Instruction* I) {
@@ -815,6 +828,7 @@ bool FlipIt::DynamicFaults::injectFault(Instruction* I) {
 #ifndef COMPILE_PASS
         logfile->logFunctionHeader(faultIdx, I->getParent()->getParent()->getName().str());
         faultIdx = updateStateFile(stateFile.c_str(), 1);
+
 #endif
         logfile->logInst(faultIdx++, injectionType, comment, I);
     }
