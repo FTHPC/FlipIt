@@ -46,7 +46,7 @@ for l in err.split("\n"):
 		a = s[0:-2].split(" ")[-1]
 		if a not in attributes:
 			attributes.append(a)
-        elif "%struct._IO" == l[0:11] or "%struct.__sFILE" == l[0:15]:
+        elif "%struct._IO" == l[0:11] or "%struct.__s" == l[0:11]:
 		outfile.write(l +"\n")
 	elif "target datalayout = " in l or "target triple = " in l:
 		outfile.write(l + "\n")
