@@ -49,16 +49,13 @@
 #include <llvm/ADT/Statistic.h>
  
 #include <llvm/Support/CommandLine.h>
-#include <llvm/Analysis/LoopPass.h>
 #include <llvm/IR/InstIterator.h>
 #include <llvm/PassManager.h>
 #include <llvm/IR/CallingConv.h>
-#include <llvm/Analysis/Verifier.h>
-#include <llvm/Assembly/PrintModulePass.h>
-#include <llvm/DebugInfo.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/IR/DebugInfo.h>
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/TypeBuilder.h>
-
 
 using namespace llvm;
 
@@ -68,11 +65,13 @@ static cl::opt<string> funcList("funcList", cl::desc("Name(s) of the function(s)
 static cl::opt<string> configPath("config", cl::desc("Path to the FlipIt Config file"), cl::value_desc("/path/to/FlipIt.config"), cl::init("FlipIt.config"));
 static cl::opt<double> siteProb("prob", cl::desc("Probability that instrution is faulty"), cl::value_desc("Any value [0,1)"), cl::init(1e-8), cl::ValueRequired);
 static cl::opt<int> byte_val("byte", cl::desc("Which byte to consider for fault injection"), cl::value_desc("-1-7"), cl::init(-1), cl::ValueRequired);
+static cl::opt<int> bit_val("bit", cl::desc("Which bit to consider for fault injection"), cl::value_desc("-1-63"), cl::init(-1), cl::ValueRequired);
 static cl::opt<int> singleInj("singleInj", cl::desc("Inject Error Only Once"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
 static cl::opt<bool> arith_err("arith", cl::desc("Inject Faults Into Arithmetic Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
 static cl::opt<bool> ctrl_err("ctrl", cl::desc("Inject Faults Into Control Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
 static cl::opt<bool> ptr_err("ptr", cl::desc("Inject Faults Into Pointer Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
 static cl::opt<string> srcFile("srcFile", cl::desc("Name of the source file being compiled"), cl::value_desc("e.g. foo.c, foo.cpp, or foo.f90"), cl::init("UNKNOWN"), cl::ValueRequired);
+static cl::opt<string> stateFile("stateFile", cl::desc("Name of the state file being updated when compiled. Used to provide unique fault site indexes."), cl::value_desc("FlipItState"), cl::init("FlipItState"), cl::ValueRequired);
 #endif
 
 
@@ -88,25 +87,27 @@ namespace FlipIt {
             std::string configPath;
             double siteProb;
             int byte_val;
+            int bit_val;
             int singleInj;
             bool arith_err;
             bool ctrl_err;
             bool ptr_err;
             std::string srcFile;
+            std::string stateFile;
 #endif
         public:
             static char ID; 
 
 #ifdef COMPILE_PASS
             DynamicFaults(); 
-            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err, std::string srcFile, Module* M); 
+            DynamicFaults(string funcList, string configPath, double siteProb, 
+                            int byte_val, int bit_val, int singleInj, bool arith_err, 
+                            bool ctrl_err, bool ptr_err, std::string srcFile, Module* M); 
 #else
             DynamicFaults(Module* M); 
-            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err, std::string srcFile, Module* M); 
+            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int bit_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err, std::string srcFile, std::string stateFile, Module* M); 
 
 #endif
-            //~DynamicFaults()
-            //    { finalize(); }
             virtual ~DynamicFaults()
                 { finalize(); }
             virtual bool runOnModule(Module &M);
@@ -117,27 +118,35 @@ namespace FlipIt {
             void init();
             bool finalize();
 			std::vector<std::string> splitAtSpace(std::string spltStr);
+			void splitAtSpace();
             int selectArgument(CallInst* callInst);
             void readConfig(string path);
-            double getInstProb(Instruction* I);
+            Value* getInstProb(Instruction* I);
             std::string demangle(std::string name);
-            bool viableFunction(std::string name, std::vector<std::string> flist);
+            bool viableFunction(std::string name, std::vector<std::string>& flist);
             unsigned long updateStateFile(const char* stateFile, unsigned long sum);
 
             bool injectControl(Instruction* I);
             bool injectArithmetic(Instruction* I);
             bool injectPointer(Instruction* I);
             bool injectCall(Instruction* I);
+            
+            bool injectControl_NEW(Instruction* I);
+            bool injectArithmetic_NEW(Instruction* I);
+            bool injectPointer_NEW(Instruction* I);
+            bool injectCall_NEW(Instruction* I);
+            bool injectResult(Instruction* I);
+			bool injectInOperand(Instruction* I, int operand);
+            
+            bool inject_Store_Data(Instruction* I,  CallInst* CallI);
+            bool inject_Compare(Instruction* I, CallInst* CallI);
+            bool inject_Generic(Instruction* I, CallInst* CallI,  BasicBlock* BB);
 
-			bool inject_Store_Data(Instruction* I, std::vector<Value*> args, CallInst* CallI);
-            bool inject_Compare(Instruction* I, std::vector<Value*> args, CallInst* CallI);
-            bool inject_Generic(Instruction* I, std::vector<Value*> args, CallInst* CallI,  BasicBlock* BB);
-
-            bool inject_Store_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI);
-            bool inject_Load_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI, BasicBlock* BB);
-            bool inject_Alloc_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI, BasicBlock* BB);
-            bool inject_Call(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI, BasicBlock* BB);
-            bool inject_GetElementPtr_Ptr(Instruction* I, std::vector<Value*> args, CallInst* CallI, BasicBlock::iterator BI, BasicBlock* BB);
+            bool inject_Store_Ptr(Instruction* I, CallInst* CallI);
+            bool inject_Load_Ptr(Instruction* I, CallInst* CallI, BasicBlock* BB);
+            bool inject_Alloc_Ptr(Instruction* I, CallInst* CallI, BasicBlock* BB);
+            bool inject_Call(Instruction* I, CallInst* CallI, BasicBlock* BB);
+            bool inject_GetElementPtr_Ptr(Instruction* I, CallInst* CallI, BasicBlock* BB);
 
             unsigned long cacheFunctions();
             bool injectFault(Instruction* I);
@@ -158,19 +167,21 @@ namespace FlipIt {
             Value* func_corruptIntAdr_64bit;
             Value* func_corruptFloatAdr_32bit;
             Value* func_corruptFloatAdr_64bit;
-
+			// **** DO I NEED TO MODIFY SOMETHING BELOW ? ****
             // used for display and analysis
-            std::map<string, double> funcProbs;
-            std::map<string, double> instProbs;
+            Type* i64Ty;
+            std::vector<Value*> args;
+            std::map<int, Value*> byteVal;
+            std::map<std::string, Value*> funcProbs;
+            std::map<std::string, Value*> instProbs;
             int comment;
             int injectionType;
-            //string comment;
-            //string injectionType;
             std::stringstream strStream;
             unsigned int oldFaultIdx;
             unsigned int faultIdx;
             unsigned int displayIdx;
-            unsigned int skipAmount;
+            unsigned int parameter;
+            std::vector<std::string> flist;
 
     };/*end class definition*/
 }/*end namespace*/

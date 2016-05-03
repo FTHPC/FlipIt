@@ -19,12 +19,14 @@ LDFLAGS = $(shell $(LLVM_CONFIG) --ldflags)
 ifeq ($(shell uname),Darwin)
 SHARED_LIB_OPT  = -bundle -undefined dynamic_lookup
 else
-SHARED_LIB_OPT  = -shared -Wl, -O1
+SHARED_LIB_OPT  = -shared -Wl,
 endif
 
-all: libFlipItPass.so libFlipIt.so
+all: libFlipItPass.so
+#all: libFlipItPass.so libFlipIt.so
 
-libFlipItPass.so:faults.cpp
+#libFlipItPass.so:faults.cpp
+libFlipItPass.so:faults_new.cpp
 	$(CXX) $(CXXFLAGS) -DCOMPILE_PASS $(LDFLAGS) -o $@ $(SHARED_LIB_OPT) $<
 
 libFlipIt.so:faults.cpp
