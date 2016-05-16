@@ -175,7 +175,7 @@ def type2Str(ty):
     elif ty == INJ_TYPE.ARITHMETIC_FIX:
         return "Arith-Fix"
     elif ty == INJ_TYPE.CONTROL_LOOP:
-        return "Contorl-Loop"
+        return "Control-Loop"
     elif ty == INJ_TYPE.CONTROL_BRANCH:
         return "Control-Branch"
     else:

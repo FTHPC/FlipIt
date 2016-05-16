@@ -158,7 +158,7 @@ class LogFile
 #elif LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR > 6
             DILocation* Loc = I->getDebugLoc();
             location = Loc->getDirectory().str()  + "/" + Loc->getFilename().str();
-            lineNum = Loc->getLineNumber();
+            lineNum = Loc->getLine();
 #endif
             if (oldFile != location) {
                 size = location.size();

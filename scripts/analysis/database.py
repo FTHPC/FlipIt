@@ -201,7 +201,7 @@ def readTrials(c, filePrefix, customParser = None):
                 c.execute("INSERT INTO injections VALUES (?,?,?,?,?,?,?)", (trial, site, rank, prob, bit, dynCycle, 'NULL'))
                
                 for j in range(8, len(inj)): 
-                    customParser(c, inj[j], trial)
+                    customParser(c, " ".join(inj[j]), trial)
 
 
             if detectMessage in l:
