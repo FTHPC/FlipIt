@@ -57,7 +57,6 @@
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/TypeBuilder.h>
 
-using namespace llvm;
 
 
 #ifdef COMPILE_PASS
@@ -127,6 +126,7 @@ namespace FlipIt {
             bool injectPointer(Instruction* I);
             bool injectCall(Instruction* I);
             
+            bool injectVector(Instruction* I);
             bool injectControl_NEW(Instruction* I);
             bool injectArithmetic_NEW(Instruction* I);
             bool injectPointer_NEW(Instruction* I);
@@ -143,7 +143,8 @@ namespace FlipIt {
             bool inject_Alloc_Ptr(Instruction* I, CallInst* CallI, BasicBlock* BB);
             bool inject_Call(Instruction* I, CallInst* CallI, BasicBlock* BB);
             bool inject_GetElementPtr_Ptr(Instruction* I, CallInst* CallI, BasicBlock* BB);
-
+            
+            bool copyMetadata(Instruction* New, Instruction* Old);
             unsigned long cacheFunctions();
             bool injectFault(Instruction* I);
 

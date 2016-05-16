@@ -143,7 +143,8 @@ bool FlipIt::DynamicFaults::runOnModule(Module &Mod) {
             if ( (isa<StoreInst>(in) || isa<LoadInst>(in)
                 || isa<BinaryOperator>(in) || isa<CmpInst>(in)
                 || isa<CallInst>(in) || isa<AllocaInst>(in) 
-                || isa<GetElementPtrInst>(in)) ) 
+                || isa<GetElementPtrInst>(in)
+                || isa<PHINode>(in)) ) 
             {   
                 injectFault(&(*I));
             }
@@ -352,6 +353,23 @@ unsigned long FlipIt::DynamicFaults::updateStateFile(const char* stateFile, unsi
     return startNum;
 }
 
+bool FlipIt::DynamicFaults::injectVector(Instruction* I) {
+
+    //TODO: call rand at runtime to get value
+    int e = 0;
+    auto idx = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), e);
+    BasicBlock::iterator Inext = I; Inext++;
+
+    auto elm = ExtractElementInst::Create(I, idx, "elm", Inext);
+    bool injected = injectFault(elm);
+    BasicBlock::iterator faulty = Inext; faulty--;// Is this true?
+    copyMetadata(faulty, I);
+    auto ins = InsertElementInst::Create(I, faulty, idx, "ins", Inext);
+    I->replaceAllUsesWith(ins);
+    ins->setOperand(0, I); // Fix it up after previous line
+    elm->setOperand(0, I);
+    return injected;
+}
 bool FlipIt::DynamicFaults::injectControl_NEW(Instruction* I) {
 
     /* Build argument list before calling Corrupt function */
@@ -675,12 +693,8 @@ int FlipIt::DynamicFaults::selectArgument(CallInst* callInst) {
         argPos.push_back(1);
     } else if (funcName.find("llvm.dbg") != string::npos) {
         return arg;
-    } else if (funcName.find("toggleInjector") != string::npos) {
+    } else if (funcName.find("FLIPIT_") != string::npos) {
         return arg;
-    } else if (funcName.find("__STORE_") != string::npos) {
-        argPos.push_back(1); //(fptr, fvalue, gptr, gvalue)
-    } else if (funcName.find("__LOAD_") != string::npos) {
-        return arg; // applies mask inside function
     } else {
         /* populate with valid arguemnts detection of constant integers should
         fix the LLVM intrinsic problem */
@@ -727,6 +741,16 @@ int FlipIt::DynamicFaults::selectArgument(CallInst* callInst) {
     }
 
     return arg;
+}
+
+bool FlipIt::DynamicFaults::copyMetadata(Instruction* New, Instruction* Old)
+{
+    MDNode* N = Old->getMetadata("dbg");
+    if (N != NULL) {
+        New->setMetadata("dbg", N);
+        //DILocation Loc(New->getMetadata("dbg"));
+    }
+    return N != NULL;
 }
 
 
@@ -794,6 +818,7 @@ bool FlipIt::DynamicFaults::corruptInstruction(Instruction* I) {
 
 bool FlipIt::DynamicFaults::injectFault(Instruction* I) {
     bool inj = false;
+    bool simd = false;
     comment = 0; injectionType = 0;
     if (ctrl_err && injectControl_NEW(I)) {
     //if (ctrl_err && injectControl(I)) {
@@ -817,13 +842,17 @@ bool FlipIt::DynamicFaults::injectFault(Instruction* I) {
         injectionType = POINTER;
     } else if ( (ctrl_err || arith_err || ptr_err) && injectCall_NEW(I) ) {
         inj = true;
+    } else if (I->getType()->isVectorTy()) {
+            simd = true;
+            inj = injectVector(I);
+            simd=false;
     }
     /*
     else {
         errs() << "Warning: Didn't injection into \"" << *inst << "\"\n";
     }
     */
-    if (inj) {
+    if (inj && !simd) {
         // Site #,   injection type, comment, inst
 #ifndef COMPILE_PASS
         logfile->logFunctionHeader(faultIdx, I->getParent()->getParent()->getName().str());
