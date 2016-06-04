@@ -167,7 +167,7 @@ namespace FlipIt {
             Value* func_corruptIntAdr_64bit;
             Value* func_corruptFloatAdr_32bit;
             Value* func_corruptFloatAdr_64bit;
-			// **** DO I NEED TO MODIFY SOMETHING BELOW ? ****
+
             // used for display and analysis
             Type* i64Ty;
             std::vector<Value*> args;

@@ -1,3 +1,4 @@
+
 /***********************************************************************************************/
 /* This file is licensed under the University of Illinois/NCSA Open Source License.            */
 /* See LICENSE.TXT for details.                                                                */
@@ -20,7 +21,7 @@ extern "C" {
 #ifndef CORRUPTH
 #define CORRUPTH
 
-
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -48,25 +49,12 @@ int flipit_init_ftn_(int* myRank, int* argc, char*** argv, unsigned long long* s
 int flipit_finalize_ftn_(char** filename);
 int flipit_setinjector_ftn_(int* state);
 int flipit_setrankinject_ftn_(int* state);
-/* void flipit_setfaultprobability_ftn_(double(faultProb)()); */
-/* void flipit_setcustomlogger_ftn_(void (customLogger)(FILE*)); */
 int flipit_countdowntimer_ftn_(unsigned long* numInstructions);
 
 /* corrupt the data */
-char       corruptIntData_8bit    (int fault_index, int inject_once, double prob, int byte_val, char inst_data);
-short      corruptIntData_16bit   (int fault_index, int inject_once, double prob, int byte_val, short inst_data);
-int        corruptIntData_32bit   (int fault_index, int inject_once, double prob, int byte_val, int inst_data);
-float      corruptFloatData_32bit (int fault_index, int inject_once, double prob, int byte_val, float inst_data);
-long long  corruptIntData_64bit   (int fault_index, int inject_once, double prob, int byte_val, long long inst_data);
-long long  corruptPtr2Int_64bit   (int fault_index, int inject_once, double prob, int byte_val, long long inst_data);
-double     corruptFloatData_64bit (int fault_index, int inject_once, double prob, int byte_val, double inst_data);
-
-char*       corruptIntAdr_8bit    (int fault_index, int inject_once, double prob, int byte_val, char* inst_data);
-short*     corruptIntAdr_16bit    (int fault_index, int inject_once, double prob, int byte_val, short* inst_data);
-int*       corruptIntAdr_32bit    (int fault_index, int inject_once, double prob, int byte_val, int* inst_add);
-long long* corruptIntAdr_64bit    (int fault_index, int inject_once, double prob, int byte_val, long long* inst_add);
-float*     corruptFloatAdr_32bit  (int fault_index, int inject_once, double prob, int byte_val, float* inst_add);
-double*    corruptFloatAdr_64bit  (int fault_index, int inject_once, double prob, int byte_val, double* inst_add);
+float      corruptFloatData_32bit (uint32_t parameter, float prob, float inst_data);
+uint64_t corruptIntData_64bit   (uint32_t parameter, float prob, uint64_t inst_data);
+double     corruptFloatData_64bit (uint32_t parameter, float prob, double inst_data);
 
 #endif
 
