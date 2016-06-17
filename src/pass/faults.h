@@ -52,18 +52,20 @@
 #include <llvm/IR/InstIterator.h>
 #include <llvm/PassManager.h>
 #include <llvm/IR/CallingConv.h>
-#include <llvm/Analysis/Verifier.h>
-#include <llvm/DebugInfo.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/IR/DebugInfo.h>
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/TypeBuilder.h>
 
 
+//#include <DataLayout.h>
 
 #ifdef COMPILE_PASS
 static cl::opt<string> funcList("funcList", cl::desc("Name(s) of the function(s) to be targeted"), cl::value_desc("func1 func2 func3"), cl::init(""), cl::ValueRequired);
 static cl::opt<string> configPath("config", cl::desc("Path to the FlipIt Config file"), cl::value_desc("/path/to/FlipIt.config"), cl::init("FlipIt.config"));
 static cl::opt<double> siteProb("prob", cl::desc("Probability that instrution is faulty"), cl::value_desc("Any value [0,1)"), cl::init(1e-8), cl::ValueRequired);
 static cl::opt<int> byte_val("byte", cl::desc("Which byte to consider for fault injection"), cl::value_desc("-1-7"), cl::init(-1), cl::ValueRequired);
+static cl::opt<int> bit_val("bit", cl::desc("Which bit to consider for fault injection"), cl::value_desc("-1-63"), cl::init(-1), cl::ValueRequired);
 static cl::opt<int> singleInj("singleInj", cl::desc("Inject Error Only Once"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
 static cl::opt<bool> arith_err("arith", cl::desc("Inject Faults Into Arithmetic Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
 static cl::opt<bool> ctrl_err("ctrl", cl::desc("Inject Faults Into Control Instructions"), cl::value_desc("0/1"), cl::init(1), cl::ValueRequired);
@@ -85,6 +87,7 @@ namespace FlipIt {
             std::string configPath;
             double siteProb;
             int byte_val;
+            int bit_val;
             int singleInj;
             bool arith_err;
             bool ctrl_err;
@@ -97,10 +100,14 @@ namespace FlipIt {
 
 #ifdef COMPILE_PASS
             DynamicFaults(); 
-            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err, std::string srcFile, std::string stateFile, Module* M); 
+            DynamicFaults(string funcList, string configPath, double siteProb,
+                    int byte_val, int bit_val, bool arith_err, bool ctrl_err,
+                    bool ptr_err, std::string srcFile, std::string stateFile, Module* M); 
 #else
             DynamicFaults(Module* M); 
-            DynamicFaults(string funcList, string configPath, double siteProb, int byte_val, int singleInj, bool arith_err, bool ctrl_err, bool ptr_err, std::string srcFile, std::string stateFile, Module* M); 
+            DynamicFaults(string funcList, string configPath, double siteProb,
+                int byte_val, int bit_val, bool arith_err, bool ctrl_err,
+                bool ptr_err, std::string srcFile, std::string stateFile, Module* M); 
 
 #endif
             virtual ~DynamicFaults()
@@ -150,6 +157,7 @@ namespace FlipIt {
 
             Module* M;
             LogFile* logfile;
+            DataLayout* Layout;
  
             Value* func_corruptIntData_8bit;
             Value* func_corruptIntData_16bit;
@@ -177,8 +185,9 @@ namespace FlipIt {
             unsigned int oldFaultIdx;
             unsigned int faultIdx;
             unsigned int displayIdx;
+            unsigned int parameter;
             std::vector<std::string> flist;
-
+            std::vector <Instruction*> phis;
     };/*end class definition*/
 }/*end namespace*/
             

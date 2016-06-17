@@ -34,14 +34,14 @@ git clone git@github.com:aperson40/FlipIt.git
 
 3.) Modify your bashrc file to add directory to path and set some environment variables that are used throughout FlipIt
 ```
- export LLVM_BUILD_PATH=/path/to/build/llvm/
+ export LLVM_BUILD_PATH=/path/to/llvm/
  export FLIPIT_PATH=/path/to/flipit
  
  #only required if you want to use FlipIt as a library with other code
  export LD_LIBRARY_PATH=/path/to/flipit/lib:$LD_LIBRARY_PATH
  
  #not required, but can make your fingers happy in you do not use the compiler wrapper
- PATH=$PATH:/path/to/build/llvm/bin
+ PATH=$PATH:/path/to/llvm/bin
  export PATH
 ```
 

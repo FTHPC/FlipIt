@@ -27,7 +27,7 @@ FlipIt::DynamicFaults::DynamicFaults(Module* M) {
     configPath = "FlipIt.config";
     siteProb = 1e-8;
     byte_val = -1;
-    singleInj = 1;
+	bit_val = -1;
     arith_err = true;
     ctrl_err = true;
     ptr_err = true;
@@ -56,13 +56,13 @@ FlipIt::DynamicFaults::DynamicFaults(Module* M) {
 }
 #ifdef COMPILE_PASS
 FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, double _siteProb, 
-                            int _byte_val, int _singleInj, bool _arith_err, 
+                            int _byte_val, int _bit_val, bool _arith_err, 
                             bool _ctrl_err, bool _ptr_err, std::string _srcFile,
                             std::string _stateFile, Module* Mod): ModulePass(ID)
 #else
 
 FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, double _siteProb, 
-                            int _byte_val, int _singleInj, bool _arith_err, 
+                            int _byte_val, int _bit_val, bool _arith_err, 
                             bool _ctrl_err, bool _ptr_err, std::string _srcFile,
                             std::string _stateFile, Module* Mod)
 #endif
@@ -72,7 +72,7 @@ FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, doubl
     configPath =  _configPath;
     siteProb = _siteProb;
     byte_val = _byte_val;
-    singleInj = _singleInj;
+    bit_val = _bit_val;
     arith_err = _arith_err;
     ctrl_err = _ctrl_err;
     ptr_err = _ptr_err;
@@ -104,7 +104,6 @@ FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, doubl
 bool FlipIt::DynamicFaults::runOnModule(Module &Mod) {
 
     M = &Mod;
-    srand(time(NULL));
     if (byte_val < -1 || byte_val > 7)
         byte_val = rand() % 8;
 
@@ -148,7 +147,20 @@ bool FlipIt::DynamicFaults::runOnModule(Module &Mod) {
             {   
                 injectFault(&(*I));
             }
+            
+            // gather all phis to place at top of BB (TODO: can we do this inplace?)
+            if (isa<PHINode>(&(*I))){
+                auto BB = I->getParent();
+                I->removeFromParent();
+                I->insertBefore(BB->getFirstInsertionPt());
+            }
 
+            // ensure any landing pad inst directly follows all PHINodes
+            if (isa<LandingPadInst>(&(*I))){
+                auto BB = I->getParent();
+                I->removeFromParent();
+                I->insertBefore(BB->getFirstInsertionPt());
+            }
             /* find next inst that is original to the function */
             while (I != Inext && I != E) { I++; }
         }
@@ -203,6 +215,31 @@ bool FlipIt::DynamicFaults::viableFunction(std::string func, std::vector<std::st
 }
 void  FlipIt::DynamicFaults::init() {
     faultIdx = 0;
+    srand(time(NULL));
+    Layout = new DataLayout(M);
+	
+    /* fix the bit and byte if they are out of bounds */ 
+    if (byte_val < -1 || byte_val > 7)
+        byte_val = rand() % 8;
+
+	if (bit_val < -1 || bit_val > 7)
+		bit_val = rand() % 8;
+	
+    /* Check for assertion violation(s) */
+    assert(byte_val <= 7 && byte_val >= -1);
+    assert(bit_val <= 7 && bit_val >= -1);
+    assert(siteProb >= 0. && siteProb < 1.);
+    assert(singleInj == 1 || singleInj == 0);
+    assert(ptr_err == 1 || ptr_err == 0);
+    assert(arith_err == 1 || arith_err == 0);
+    assert(ptr_err == 1 || ptr_err == 0);
+	
+    unsigned int t_byte_val = (byte_val << 28) & 0xF0000000;
+    unsigned int t_bit_val = (bit_val << 24) & 0x0F000000;
+    unsigned int t_faultIdx = faultIdx & 0x00FFFFFF;
+    parameter = t_byte_val | t_bit_val | t_faultIdx;
+    
+
     readConfig(configPath);
     splitAtSpace();
     /*Cache function references of the function defined in Corrupt.c to all inserting of
@@ -217,10 +254,9 @@ void  FlipIt::DynamicFaults::init() {
     logfile = new LogFile(srcFile, faultIdx); 
     
     //set up args to be used in corrupt calls
-    args.reserve(5);
-    for (int i = 0; i < 5; i++)
+    args.reserve(3);
+    for (int i = 0; i < 3; i++)
         args.push_back(NULL);
-    args[1] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), singleInj);
     
     // create constant ints for each byte position
     for (int i=-1; i<8; i++) {
@@ -276,6 +312,19 @@ void FlipIt::DynamicFaults::readConfig(string path) {
 
 bool  FlipIt::DynamicFaults::finalize() {
     logfile->close();
+
+    // put all phinode insts at top of BB
+    for (auto phi : phis) {
+        phi->dump();
+    }
+    for (auto phi : phis) {
+        auto BB = phi->getParent();
+        errs() << "============================\n";
+        phi->dump();
+        phi->removeFromParent();
+        phi->insertBefore(BB->getFirstInsertionPt());
+        BB->dump();
+    }
     //delete logfile;
     return oldFaultIdx != faultIdx;
 }
@@ -373,9 +422,8 @@ bool FlipIt::DynamicFaults::injectVector(Instruction* I) {
 bool FlipIt::DynamicFaults::injectControl_NEW(Instruction* I) {
 
     /* Build argument list before calling Corrupt function */
-    args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIdx);
-    args[2] = getInstProb(I);
-    args[3] = byteVal[byte_val];
+    args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), parameter);
+    args[1] = getInstProb(I);
 
 
     /* Choose a fault site in CmpInst and insert Corrupt function call */
@@ -416,9 +464,8 @@ bool FlipIt::DynamicFaults::injectControl_NEW(Instruction* I) {
 bool FlipIt::DynamicFaults::injectArithmetic_NEW(Instruction* I)
 {
     /* Build argument list before calling Corrupt function */
-    args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIdx);
-    args[2] = getInstProb(I);
-    args[3] = byteVal[byte_val];
+    args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), parameter);
+    args[1] = getInstProb(I);
 
     /* We handle these in a special way */
     if (isa<CallInst>(I))
@@ -426,8 +473,8 @@ bool FlipIt::DynamicFaults::injectArithmetic_NEW(Instruction* I)
 
     /* store instruction required differnt injection logic than binary operators */
     if (isa<StoreInst>(I)) {
-        if (I->getType()->isIntegerTy()
-            || I->getType()->isFloatingPointTy())
+        if (I->getOperand(0)->getType()->isIntegerTy()
+            || I->getOperand(0)->getType()->isFloatingPointTy())
         {
             bool ret = injectInOperand(I, 0);
             comment = VALUE;
@@ -452,17 +499,15 @@ bool FlipIt::DynamicFaults::injectArithmetic_NEW(Instruction* I)
 bool FlipIt::DynamicFaults::injectPointer_NEW(Instruction* I)
 {
     /*Build argument list before calling Corrupt function*/
-    args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIdx);
-    args[2] = getInstProb(I);
-    args[3] = byteVal[byte_val];
+    args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), parameter);
+    args[1] = getInstProb(I);
 
-    //if (isa<AllocaInst>(I) || isa<GetElementPtrInst>) {
+    if (isa<StoreInst>(I) && I->getOperand(0)->getType()->isPointerTy()) {
+        bool ret = injectInOperand(I, 0); //Value
+        comment = VALUE;
+        return ret;
+    }
     if (I->getType()->isPointerTy()) {
-        if (isa<StoreInst>(I)) {
-            bool ret = injectInOperand(I, 0); //Value
-            comment = VALUE;
-            return ret;
-        }
         bool ret = injectResult(I);
         if (isa<LoadInst>(I)) {
             comment = VALUE;
@@ -475,9 +520,8 @@ bool FlipIt::DynamicFaults::injectPointer_NEW(Instruction* I)
 bool FlipIt::DynamicFaults::injectCall_NEW(Instruction* I)
 {
     /*Build argument list before calling Corrupt function*/
-    args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), faultIdx);
-    args[2] = getInstProb(I);
-    args[3] = byteVal[byte_val];
+    args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), parameter);
+    args[1] = getInstProb(I);
     
     if (!isa<CallInst>(I))
         return false; 
@@ -494,94 +538,93 @@ bool FlipIt::DynamicFaults::injectCall_NEW(Instruction* I)
     return injectInOperand(I, opNum);
 }
 
-bool FlipIt::DynamicFaults::injectResult(Instruction* I) {
-    args[4] = I;
+bool FlipIt::DynamicFaults::injectResult(Instruction* I)
+{
+    args[2] = I;
     BasicBlock::iterator INext(I);
-    INext++;
+//    if (isa<PHINode>(I))
+//        phis.push_back(I);
+    INext++; //while(isa<PHINode>(INext)) { INext++;}
     Value* corruptVal = NULL;
     CallInst* call = NULL;
     auto type = I->getType();
+    
+
     /*Integer Data*/
-    if (type->isIntegerTy(8)) {
-        call = CallInst::Create(func_corruptIntData_8bit, args,
-                                 "call_corruptIntData_8bit", INext);
-        call->setCallingConv(CallingConv::C);
-    } else if (type->isIntegerTy(16)) {
-        call = CallInst::Create(func_corruptIntData_16bit, args,
-                                  "call_corruptIntData_16bit", INext);
-        call->setCallingConv(CallingConv::C);
-    } else if (type->isIntegerTy(32)) {
-        call = CallInst::Create(func_corruptIntData_32bit, args,
-                               "call_corruptIntData_32bit", INext);
-        call->setCallingConv(CallingConv::C);
-    } else if (type->isIntegerTy(64)) {
+    if (type->isIntegerTy()) {
+        /* encode integer size in the byte val */
+        int size = Layout->getTypeStoreSize(I->getType());
+        if (byte_val == -1) {
+            unsigned int t_byte_val = ((-size) << 28) & 0xF0000000;
+            unsigned int t_bit_val = (bit_val << 24) & 0x0F000000;
+            unsigned int t_faultIdx = faultIdx & 0x00FFFFFF;
+            //errs() << "BYTE= " << size << " BIT= " << bit_val << " IDX= " << faultIdx << "\n";
+            //errs() << "BYTE= " << (t_byte_val >> 28) << " BIT= " << ((t_bit_val >> 24) & 0xF) << " IDX= " << (faultIdx & 0x00FFFFFF) << "\n";
+            parameter = t_byte_val | t_bit_val | t_faultIdx;
+            args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), parameter);
+        }
+        else if (size < byte_val) {
+            unsigned int t_byte_val = ((byte_val % size) << 28) & 0xF0000000;
+            unsigned int t_bit_val = (bit_val << 24) & 0x0F000000;
+            unsigned int t_faultIdx = faultIdx & 0x00FFFFFF;
+            //errs() << "BYTE= " << byte_val % size << " BIT= " << bit_val << " IDX= " << faultIdx << "\n";
+            //errs() << "BYTE= " << (t_byte_val >> 28) << " BIT= " << ((t_bit_val >> 24) & 0xF) << " IDX= " << (faultIdx & 0x00FFFFFF) << "\n";
+            parameter = t_byte_val | t_bit_val | t_faultIdx;
+            args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), parameter);
+        }
+        
+        if (! (type->isIntegerTy(64))) {
+            args[2] = new ZExtInst(I, i64Ty, "zxt", INext);
+        }
         call = CallInst::Create(func_corruptIntData_64bit, args,
-                               "call_corruptIntData_64bit", INext);
-        call->setCallingConv(CallingConv::C);
+                                "call_corruptIntData_64bit", INext);
+        //call->setCallingConv(CallingConv::C);
+        if (!(type->isIntegerTy(64))) {
+            corruptVal = new TruncInst(call, type, "trunc", INext);
+        }
     } else if (type->isFloatTy()) {
     /*Float Data*/
         call = CallInst::Create(func_corruptFloatData_32bit, args,
                                  "call_corruptFloatData_32bit", INext);
-        call->setCallingConv(CallingConv::C);
+        //call->setCallingConv(CallingConv::C);
     } else if (type->isDoubleTy()) {
         call = CallInst::Create(func_corruptFloatData_64bit, args,
                                  "call_corruptFloatData_64bit", INext);
-        call->setCallingConv(CallingConv::C);
-    } 
-    else if (type->isPointerTy()) { 
-        type = type->getSequentialElementType();
-        if (type->isIntegerTy(8)) {
-            call = CallInst::Create(func_corruptIntAdr_8bit, args,
-                                "call_corruptIntAdr_8bit", INext);
-            call->setCallingConv(CallingConv::C);
-        } else if (type->isIntegerTy(16)) {
-            call = CallInst::Create(func_corruptIntAdr_16bit, args,
-                                "call_corruptIntAdr_16bit", INext);
-            call->setCallingConv(CallingConv::C);
-        } else if (type->isIntegerTy(32)) {
-            call = CallInst::Create(func_corruptIntAdr_32bit, args,
-                                "call_corruptIntAdr_32bit", INext);
-            call->setCallingConv(CallingConv::C);
-        } else if (type->isIntegerTy(64)) {
-            call = CallInst::Create(func_corruptIntAdr_64bit, args,
-                                "call_corruptIntAdr_64bit", INext);
-            call->setCallingConv(CallingConv::C);
-        } else if (type->isFloatTy()) {
-            call = CallInst::Create(func_corruptFloatAdr_32bit, args,
-                                "call_corruptFloatAdr_32bit", INext);
-            call->setCallingConv(CallingConv::C);
-        } else if (type->isDoubleTy()) {
-            call = CallInst::Create(func_corruptFloatAdr_64bit, args,
-                                "call_corruptFloatAdr_64bit", INext);
-            call->setCallingConv(CallingConv::C);
-        } else {
-            /* Convert ptr to int64 */
-            auto p2iI = new PtrToIntInst(I, i64Ty, "convert_ptr2i64", INext);
+        //call->setCallingConv(CallingConv::C);
+    } else if (type->isPointerTy()) { 
+        /* Convert ptr to int64 */
+        auto p2iI = new PtrToIntInst(I, i64Ty, "convert_ptr2i64", INext);
 
-            /* Corrupt */
-            args[4] = p2iI;
-            call = CallInst::Create(func_corruptPtr2Int_64bit, args,
-                                    "call_corruptPtr2Int_64bit", INext);
-            call->setCallingConv(CallingConv::C);
+        /* Corrupt */
+        args[2] = p2iI;
+        call = CallInst::Create(func_corruptPtr2Int_64bit, args,
+                                "call_corruptPtr2Int_64bit", INext);
+        //call->setCallingConv(CallingConv::C);
 
-            /* convert int64 to ptr */
-            corruptVal = new IntToPtrInst(call, I->getType(), "convert_i642ptr", INext);
-        }
+        /* convert int64 to ptr */
+        corruptVal = new IntToPtrInst(call, I->getType(), "convert_i642ptr", INext);
     }
+
     if (corruptVal == NULL) {
         corruptVal = call;
     }
     if (corruptVal) {
         I->replaceAllUsesWith(corruptVal);
 
+        /*if (isa<PHINode>(I))
+        {
+            call->setOperand(2, args[2]);
+        }*/
+
         /* Because of the preceeding method invocation, we messed up last argument in the call instruction.
             We need to manually set this value to the result of Insturction I */
         INext = I;
         INext++;
         if (isa<CallInst>(INext))
-            INext->setOperand(4, I); // hard coded. If like others, it says we have an extra argument
+            INext->setOperand(2, I); // hard coded. If like others, it says we have an extra argument
         else
             INext->setOperand(0, I);
+        
         comment = RESULT;
         return true;
     }
@@ -591,27 +634,38 @@ bool FlipIt::DynamicFaults::injectResult(Instruction* I) {
 bool FlipIt::DynamicFaults::injectInOperand(Instruction* I, int operand)
 {
     /* We assume that operand is vaild */
-    args[4] = I->getOperand(operand); // value stored
+    args[2] = I->getOperand(operand); // value stored
     Value* corruptVal = NULL;
     CallInst* call = NULL;
     auto type = I->getOperand(operand)->getType();
     /*Integer Data*/
-    if (type->isIntegerTy(8)) {
-        call = CallInst::Create(func_corruptIntData_8bit, args,
-                                "call_corruptIntData_8bit", I);
-        call->setCallingConv(CallingConv::C);
-    } else if (type->isIntegerTy(16)) {
-        call = CallInst::Create(func_corruptIntData_16bit, args,
-                                "call_corruptIntData_16bit", I);
-        call->setCallingConv(CallingConv::C);
-    } else if (type->isIntegerTy(32)) {
-        call = CallInst::Create(func_corruptIntData_32bit, args,
-                                "call_corruptIntData_32bit", I);
-        call->setCallingConv(CallingConv::C);
-    } else if (type->isIntegerTy(64)) {
+    if (type->isIntegerTy()) {
+        /* Incode integer size in the byte val */
+        int size = Layout->getTypeStoreSize(I->getOperand(operand)->getType());
+        if (byte_val == -1) {
+            unsigned int t_byte_val = ((-size) << 28) & 0xF0000000;
+            unsigned int t_bit_val = (bit_val << 24) & 0x0F000000;
+            unsigned int t_faultIdx = faultIdx & 0x00FFFFFF;
+            //errs() << "BYTE= " << size << " BIT= " << bit_val << " IDX= " << faultIdx << "\n";
+            //errs() << "BYTE= " << (t_byte_val >> 28) << " BIT= " << ((t_bit_val >> 24) & 0xF) << " IDX= " << (faultIdx & 0x00FFFFFF) << "\n";
+            parameter = t_byte_val | t_bit_val | t_faultIdx;
+            args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), parameter);
+        }
+        else if (size < byte_val) {
+            parameter &= 0x0FFFFFFFF; // zero out old byte field
+            parameter |= ((byte_val % size) << 28); // insert new
+            args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), parameter);
+        }
+        
+        if (! (type->isIntegerTy(64))) {
+            args[2] = new ZExtInst(I->getOperand(operand), i64Ty, "zxt", I);
+        }
         call = CallInst::Create(func_corruptIntData_64bit, args,
                                 "call_corruptIntData_64bit", I);
         call->setCallingConv(CallingConv::C);
+        if (!(type->isIntegerTy(64))) {
+            corruptVal = new TruncInst(call, type, "trunc", I);
+        }
     } else if (type->isFloatTy()) {
     /*Float Data*/
         call = CallInst::Create(func_corruptFloatData_32bit, args,
@@ -623,44 +677,16 @@ bool FlipIt::DynamicFaults::injectInOperand(Instruction* I, int operand)
         call->setCallingConv(CallingConv::C);
     } 
     else if (type->isPointerTy()) { 
-        type = type->getSequentialElementType();
-        if (type->isIntegerTy(8)) {
-            call = CallInst::Create(func_corruptIntAdr_8bit, args,
-                                "call_corruptIntAdr_8bit", I);
-            call->setCallingConv(CallingConv::C);
-        } else if (type->isIntegerTy(16)) {
-            call = CallInst::Create(func_corruptIntAdr_16bit, args,
-                                "call_corruptIntAdr_16bit", I);
-            call->setCallingConv(CallingConv::C);
-        } else if (type->isIntegerTy(32)) {
-            call = CallInst::Create(func_corruptIntAdr_32bit, args,
-                                "call_corruptIntAdr_32bit", I);
-            call->setCallingConv(CallingConv::C);
-        } else if (type->isIntegerTy(64)) {
-            call = CallInst::Create(func_corruptIntAdr_64bit, args,
-                                "call_corruptIntAdr_64bit", I);
-            call->setCallingConv(CallingConv::C);
-        } else if (type->isFloatTy()) {
-            call = CallInst::Create(func_corruptFloatAdr_32bit, args,
-                                "call_corruptFloatAdr_32bit", I);
-            call->setCallingConv(CallingConv::C);
-        } else if (type->isDoubleTy()) {
-            call = CallInst::Create(func_corruptFloatAdr_64bit, args,
-                                "call_corruptFloatAdr_64bit", I);
-            call->setCallingConv(CallingConv::C);
-        } else {
-            type = args[4]->getType();
-            auto p2iI = new PtrToIntInst(args[4], i64Ty, "convert_ptr2i64", I);
+        auto p2iI = new PtrToIntInst(args[2], i64Ty, "convert_ptr2i64", I);
 
-            /* Corrupt */
-            args[4] = p2iI;
-            call = CallInst::Create(func_corruptPtr2Int_64bit, args,
-                                    "call_corruptPtr2Int_64bit", I);
-            call->setCallingConv(CallingConv::C);
+        /* Corrupt */
+        args[2] = p2iI;
+        call = CallInst::Create(func_corruptPtr2Int_64bit, args,
+                                "call_corruptPtr2Int_64bit", I);
+        call->setCallingConv(CallingConv::C);
 
-            /* convert int64 to ptr */
-            corruptVal = new IntToPtrInst(call, type, "convert_i642ptr", I);
-        }
+        /* convert int64 to ptr */
+        corruptVal = new IntToPtrInst(call, type, "convert_i642ptr", I);
     }
     if (corruptVal == NULL) {
         corruptVal = call;
@@ -743,12 +769,11 @@ int FlipIt::DynamicFaults::selectArgument(CallInst* callInst) {
     return arg;
 }
 
-bool FlipIt::DynamicFaults::copyMetadata(Instruction* New, Instruction* Old)
+bool FlipIt::DynamicFaults::copyMetadata(Instruction* to, Instruction* from)
 {
-    MDNode* N = Old->getMetadata("dbg");
+    MDNode* N = from->getMetadata("dbg");
     if (N != NULL) {
-        New->setMetadata("dbg", N);
-        //DILocation Loc(New->getMetadata("dbg"));
+        to->setMetadata("dbg", N);
     }
     return N != NULL;
 }
@@ -758,13 +783,7 @@ unsigned long FlipIt::DynamicFaults::cacheFunctions() { //Module::FunctionListTy
     unsigned long sum = 0; // # insts in module
     for (auto F = M->getFunctionList().begin(), E = M->getFunctionList().end(); F != E; F++) {
         string cstr = F->getName().str();
-        if (cstr.find("corruptIntData_8bit") != std::string::npos) {
-            func_corruptIntData_8bit =&*F;
-        } else if (cstr.find("corruptIntData_16bit") != std::string::npos) {
-            func_corruptIntData_16bit =&*F;
-        } else if (cstr.find("corruptIntData_32bit") != std::string::npos) {
-            func_corruptIntData_32bit =&*F;
-        } else if (cstr.find("corruptIntData_64bit") != std::string::npos) {
+        if (cstr.find("corruptIntData_64bit") != std::string::npos) {
             func_corruptIntData_64bit =&*F;
         } else if (cstr.find("corruptPtr2Int_64bit") != std::string::npos) {
             func_corruptPtr2Int_64bit =&*F;
@@ -772,18 +791,6 @@ unsigned long FlipIt::DynamicFaults::cacheFunctions() { //Module::FunctionListTy
             func_corruptFloatData_32bit =&*F;
         } else if (cstr.find("corruptFloatData_64bit") != std::string::npos) {
             func_corruptFloatData_64bit =&*F;
-        } else if (cstr.find("corruptIntAdr_8bit") != std::string::npos) {
-            func_corruptIntAdr_8bit =&*F;
-        } else if (cstr.find("corruptIntAdr_16bit") != std::string::npos) {
-            func_corruptIntAdr_16bit =&*F;
-        } else if (cstr.find("corruptIntAdr_32bit") != std::string::npos) {
-            func_corruptIntAdr_32bit =&*F;
-        } else if (cstr.find("corruptIntAdr_64bit") != std::string::npos) {
-            func_corruptIntAdr_64bit =&*F;
-        } else if (cstr.find("corruptFloatAdr_32bit") != std::string::npos) {
-            func_corruptFloatAdr_32bit =&*F;
-        } else if (cstr.find("corruptFloatAdr_64bit") != std::string::npos) {
-            func_corruptFloatAdr_64bit =&*F;
         }
         /* TODO: check for function viability */
         if (F->begin() != F->end() && viableFunction(cstr, flist))
@@ -791,13 +798,8 @@ unsigned long FlipIt::DynamicFaults::cacheFunctions() { //Module::FunctionListTy
                 sum += BB->size();
     }/*end for*/
 
-    assert(func_corruptIntData_8bit != NULL  && func_corruptIntData_16bit != NULL
-        && func_corruptIntData_32bit != NULL && func_corruptIntData_64bit != NULL
-        && func_corruptPtr2Int_64bit != NULL  && func_corruptFloatData_32bit != NULL
-        && func_corruptFloatData_64bit != NULL && func_corruptIntAdr_8bit != NULL
-        && func_corruptIntAdr_16bit != NULL  && func_corruptIntAdr_32bit != NULL
-        && func_corruptIntAdr_64bit != NULL && func_corruptFloatAdr_32bit != NULL
-        && func_corruptFloatAdr_64bit != NULL);
+    assert(func_corruptIntData_64bit != NULL && func_corruptPtr2Int_64bit != NULL
+        && func_corruptFloatData_32bit != NULL && func_corruptFloatData_64bit != NULL);
     
     return sum;
 }
@@ -821,11 +823,8 @@ bool FlipIt::DynamicFaults::injectFault(Instruction* I) {
     bool simd = false;
     comment = 0; injectionType = 0;
     if (ctrl_err && injectControl_NEW(I)) {
-    //if (ctrl_err && injectControl(I)) {
         inj = true;
-        //injectionType = "Control";
     } else if (arith_err && injectArithmetic_NEW(I)) {
-    //} else if (arith_err && injectArithmetic(I)) {
         inj = true;
         Value* tmp = I;
         if (isa<StoreInst>(I)) {

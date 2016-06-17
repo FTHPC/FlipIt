@@ -51,6 +51,7 @@ def removeLinking(flags):
             continue
         else:
             noLinker += i + " "
+    print "LINKING: ", noLinker
     return noLinker
 
 def setConfig(argv):
@@ -125,16 +126,22 @@ if (shouldInject(sys.argv, notInject)):
         step4 += fileName[0:fileObj.rfind(".")-1] + ".o"
     else:
         step4 += fileObj
-    if verbose == True:
-        print step1 + "\n\n" + step2 + "\n\n" + step3 + "\n\n" + step4
 
     os.system("rm " + fileNameBC + " " + fileName + ".crpt.bc " + fileName + ".final.bc")
     #check if we need to compile based on modified times
     if not (os.path.isfile(fileObj) and\
             (os.path.getmtime(fileObj) > os.path.getmtime(fileName))):
+        if verbose == True:
+            print "\n\n========== Compiling file: ", fileName, " ==========\n\n", step1
         os.system(step1)
+        if verbose == True:
+            print step2
         os.system(step2)
+        if verbose == True:
+            print step3
         os.system(step3)
+        if verbose == True:
+            print step4
         os.system(step4)
 else:
     if "-V" in sys.argv or "--version" in sys.argv:
@@ -142,5 +149,6 @@ else:
         os.system(LLVM_BUILD_PATH + "/bin/clang --version")
     else: 
         sys.argv[0] = cc + " -I" + FLIPIT_PATH + "/include "
+        sys.argv[-1] += " -ldl -L/usr/lib/ -lm -lstdc++"
         print addFlipItLinkage(' '.join(sys.argv))
         os.system( addFlipItLinkage(' '.join(sys.argv)) )
