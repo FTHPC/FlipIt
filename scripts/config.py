@@ -56,7 +56,7 @@ import os
 FLIPIT_PATH = os.environ['FLIPIT_PATH']
 LLVM_BUILD_PATH = os.environ['LLVM_BUILD_PATH']
 SHOW = ""
-
+CPP_LIB = " -ldl -L/usr/lib/ -lm -lstdc++ "
 
 ########### Files to NOT inject inside ###############
 notInject = [" ", " "]

@@ -75,7 +75,7 @@ if (shouldInject(sys.argv, notInject)):
         + " -arith " + str(arith) \
         + " -funcList " + funcList \
         + " -stateFile " + stateFile
-    step4 = LLVM_BUILD_PATH + "/bin/clang " 
+    step4 = LLVM_BUILD_PATH + "/bin/clang++ " 
     fileName = ""
     fileNameBC = ""
     fileObj = ""
@@ -149,6 +149,6 @@ else:
         os.system(LLVM_BUILD_PATH + "/bin/clang --version")
     else: 
         sys.argv[0] = cc + " -I" + FLIPIT_PATH + "/include "
-        sys.argv[-1] += " -ldl -L/usr/lib/ -lm -lstdc++"
+        sys.argv[-1] += CPP_LIB 
         print addFlipItLinkage(' '.join(sys.argv))
         os.system( addFlipItLinkage(' '.join(sys.argv)) )
