@@ -127,7 +127,15 @@ if (shouldInject(sys.argv, notInject)):
     else:
         step4 += fileObj
 
-    os.system("rm " + fileNameBC + " " + fileName + ".crpt.bc " + fileName + ".final.bc")
+    #remove temporary files
+    if os.path.isfile(fileNameBC):
+        os.system("rm " + fileNameBC)
+    if os.path.isfile(fileName + ".crpt.bc"):
+        os.system("rm " + fileName + ".crpt.bc")
+    if os.path.isfile(fileName + ".final.bc"):
+        os.system("rm " + fileName + ".final.bc")
+
+
     #check if we need to compile based on modified times
     if not (os.path.isfile(fileObj) and\
             (os.path.getmtime(fileObj) > os.path.getmtime(fileName))):
