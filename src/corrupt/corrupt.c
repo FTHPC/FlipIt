@@ -81,9 +81,9 @@ void FLIPIT_Init(uint32_t myRank, uint32_t argc, char** argv, uint64_t seed) {
 #ifdef FLIPIT_HISTOGRAM
     FLIPIT_Histogram = (uint64_t*) calloc(FLIPIT_MAX_LOC, sizeof(uint64_t));
 #endif
-    #ifdef FLIPIT_DEBUG
-        printf("Rank %d alloced an FLIPIT_Histogram of length: %d\n", FLIPIT_Rank, FLIPIT_MAX_LOC);
-    #endif
+#ifdef FLIPIT_DEBUG
+    printf("Rank %d alloced an FLIPIT_Histogram of length: %d\n", FLIPIT_Rank, FLIPIT_MAX_LOC);
+#endif
     FLIPIT_State = FLIPIT_ON;
     srand(seed + myRank);
     srand48(seed + myRank);
@@ -93,6 +93,7 @@ void FLIPIT_Init(uint32_t myRank, uint32_t argc, char** argv, uint64_t seed) {
 void FLIPIT_Finalize(char* fname) {
     int i;
     FILE* outfile;
+#ifdef FLIPIT_HISTOGRAM
     if (fname != NULL) {
         char filename[500];
         char tmp[15];
@@ -108,6 +109,7 @@ void FLIPIT_Finalize(char* fname) {
     }
     
     free(FLIPIT_Histogram);
+#endif
     if (FLIPIT_FaultSites != NULL)
         free(FLIPIT_FaultSites);
 }
