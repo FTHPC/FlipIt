@@ -67,9 +67,10 @@ if (shouldInject(sys.argv, notInject)):
     step2 = LLVM_BUILD_PATH + "/bin/llvm-link " + FLIPIT_PATH +"/include/FlipIt/corrupt/corrupt.bc "
     step3 = LLVM_BUILD_PATH + "/bin/opt -load "+ FLIPIT_PATH + "/lib/libFlipItPass.so -FlipIt " \
         + " -config " + config \
-        + " -singleInj " + str(singleInj) \
+        #+ " -singleInj " + str(singleInj) \
         + " -prob " + str(prob) \
         + " -byte " + str(byte) \
+        + " -bit " + str(bit) \
         + " -ptr " + str(ptr) \
         + " -ctrl " + str(ctrl) \
         + " -arith " + str(arith) \
