@@ -46,6 +46,8 @@ void FLIPIT_SetCustomLogger(void (customLogger)(FILE*));
 void FLIPIT_CountdownTimer(unsigned long numInstructions);
 unsigned long long FLIPIT_GetExecutedInstructionCount();
 int FLIPIT_GetInjectionCount();
+void FLIPIT_SetMaxInjections(int n);
+int FLIPIT_GetMaxInjections();
 
 /* FORTRAN VERSIONS (ex: CALL flipit_init_ftn(myrank, argc, argv, seed) */
 int flipit_init_ftn_(int* myRank, int* argc, char*** argv, unsigned long long* seed);
@@ -61,22 +63,6 @@ float      corruptFloatData_32bit (uint32_t parameter, double prob, float inst_d
 uint64_t corruptIntData_64bit   (uint32_t parameter, double prob, uint64_t inst_data);
 double     corruptFloatData_64bit (uint32_t parameter, double prob, double inst_data);
 uint64_t corruptPtr2Int_64bit   (uint32_t parameter, double prob, uint64_t inst_data);
-/*
-char       corruptIntData_8bit    (int fault_index, int inject_once, double prob, int byte_val, char inst_data);
-short      corruptIntData_16bit   (int fault_index, int inject_once, double prob, int byte_val, short inst_data);
-int        corruptIntData_32bit   (int fault_index, int inject_once, double prob, int byte_val, int inst_data);
-float      corruptFloatData_32bit (int fault_index, int inject_once, double prob, int byte_val, float inst_data);
-long long  corruptIntData_64bit   (int fault_index, int inject_once, double prob, int byte_val, long long inst_data);
-long long  corruptPtr2Int_64bit   (int fault_index, int inject_once, double prob, int byte_val, long long inst_data);
-double     corruptFloatData_64bit (int fault_index, int inject_once, double prob, int byte_val, double inst_data);
-
-char*       corruptIntAdr_8bit    (int fault_index, int inject_once, double prob, int byte_val, char* inst_data);
-short*     corruptIntAdr_16bit    (int fault_index, int inject_once, double prob, int byte_val, short* inst_data);
-int*       corruptIntAdr_32bit    (int fault_index, int inject_once, double prob, int byte_val, int* inst_add);
-long long* corruptIntAdr_64bit    (int fault_index, int inject_once, double prob, int byte_val, long long* inst_add);
-float*     corruptFloatAdr_32bit  (int fault_index, int inject_once, double prob, int byte_val, float* inst_add);
-double*    corruptFloatAdr_64bit  (int fault_index, int inject_once, double prob, int byte_val, double* inst_add);
-*/
 #endif
 
 #ifdef __cplusplus

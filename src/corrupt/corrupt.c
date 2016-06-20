@@ -17,8 +17,7 @@
 
 #define FAULT_IDX_MASK 0x00FFFFFF
 
-/*Inject only once */
-static uint32_t FLIPIT_SingleInjection = 0;
+static uint32_t FLIPIT_MaxInjections = 1;
 static uint32_t FLIPIT_State = 0;
 
 
@@ -69,12 +68,12 @@ void FLIPIT_Init(uint32_t myRank, uint32_t argc, char** argv, uint64_t seed) {
     flipit_parseArgs(argc, argv);
 
     if (FLIPIT_Rank == 0)
-        printf("Fault injector seed: %lld\n", seed+myRank);
+        printf("Fault injector seed: %llu\n", (unsigned long long)seed+myRank);
     
     infile = fopen(FLIPIT_StateFile, "r");
     
     if (infile) {
-        fscanf(infile, "%d", &amount);
+        int ret = fscanf(infile, "%d", &amount);
         if (amount > FLIPIT_MAX_LOC)
             FLIPIT_MAX_LOC = amount;
         fclose(infile);
@@ -156,6 +155,28 @@ int FLIPIT_GetInjectionCount() {
     return FLIPIT_InjectionCount;
 }
 
+void FLIPIT_SetMaxInjections(int n)
+{
+    if (n < 0)
+        printf("Warning: Attempting to set Max Injections to negative value %d. Defaulting to 1.\n", n);
+        n  = 1;
+
+    // set max number of injections for this rank;
+    // then calculate the remaing number of injections if any
+    FLIPIT_MaxInjections = n;
+    if (FLIPIT_MaxInjections > FLIPIT_InjectionCount)
+        FLIPIT_REMAIN_INJECT_COUNT = FLIPIT_MaxInjections - FLIPIT_InjectionCount;
+    else
+        FLIPIT_REMAIN_INJECT_COUNT = 0;
+
+    assert(FLIPIT_REMAIN_INJECT_COUNT >= 0
+        && "ERROR: NEGATIVE NUMBER OF REMAINING INJECTIONS!!!");  
+}
+
+int FLIPIT_GetMaxInjections()
+{
+    return FLIPIT_MaxInjections;
+}
 /***********************************************************************************************/
 /* User callable function for FORTRAN wrapper                                              */
 /***********************************************************************************************/
@@ -269,7 +290,7 @@ static uint8_t flipit_shouldInjectNoCheck() {
 
 
 static uint8_t flipit_shouldInjectCheck(uint32_t fault_index) {
-
+/*
     FLIPIT_TotalInsts++;                                    //CS
     if ((0 == FLIPIT_State) || (0 == FLIPIT_RankInject) || (0 == FLIPIT_REMAIN_INJECT_COUNT)) //CS
         return 0;
@@ -279,10 +300,11 @@ static uint8_t flipit_shouldInjectCheck(uint32_t fault_index) {
     uint8_t inject = (FLIPIT_FaultSites[index] & (0x1 << (bit))) >> (bit);
     FLIPIT_Attempts += inject;                              //CS
     return inject;
-}
-static int flipit_shouldInject(int fault_index, int inject_once) {    
+*/
+
+    int inject_once = FLIPIT_MaxInjections == 1;
     int i;
-    int inject = (FLIPIT_State && FLIPIT_RankInject) ? 1 : 0;
+    int inject = flipit_shouldInjectNoCheck();
     FLIPIT_TotalInsts++;
     if (!inject)
         return 0;
@@ -298,16 +320,8 @@ static int flipit_shouldInject(int fault_index, int inject_once) {
     }
     else
         inject = 1;
-
-    /* inject only once */
-    if(inject_once == 1)
-        FLIPIT_SingleInjection = 1;
-    if(FLIPIT_SingleInjection == 1 && FLIPIT_InjectionCount > 0)
-    {
-        inject = 0;
-        FLIPIT_RankInject = 0;
-    }
-    FLIPIT_Attempts += inject;
+    
+    //FLIPIT_Attempts += inject;
     return inject;
 }
 
@@ -498,215 +512,3 @@ uint64_t corruptPtr2Int_64bit(uint32_t parameter, double prob, uint64_t inst_dat
 }
 
 
-#ifdef OLD_WAY
-/*
-long long corruptIntData_64bit(int fault_index, int inject_once, double prob,  int byte_val, long long inst_data) {
-    unsigned int bPos;
-    double p;
-    
-    FLIPIT_Histogram[fault_index]++;
-    if (!flipit_shouldInject(fault_index, inject_once))
-        return inst_data;
-    p = FLIPIT_FaultProb();
-    if (p > prob)
-        return inst_data;
-
-    if (byte_val == -1)
-        byte_val = rand()%8;
-    bPos=(8*byte_val)+rand()%8;
-    FLIPIT_InjectionCount++;
-    flipit_print_injectedErr("64-bit Integer Data", bPos, fault_index, prob, p);
-    FLIPIT_Attempts = 0;
-    return inst_data ^ ((long long) 0x1L << bPos);
-}
-*/
-float corruptFloatData_32bit(int fault_index, int inject_once, double prob, int byte_val, float inst_data) {
-    unsigned int bPos;
-    double p;
-    
-    FLIPIT_Histogram[fault_index]++;
-    if (!flipit_shouldInject(fault_index, inject_once))
-        return inst_data;
-    p = FLIPIT_FaultProb();
-    if (p > prob)
-        return inst_data;
-
-    if (byte_val == -1 || byte_val > 3)
-        byte_val = rand()%4;
-    bPos=(8*byte_val)+rand()%8;
-
-    FLIPIT_InjectionCount++;
-    flipit_print_injectedErr("32-bit IEEE Float Data", bPos, fault_index, prob, p);
-    FLIPIT_Attempts = 0;
-
-	int* ptr = (int* ) &inst_data;
-    int tmp  = (*ptr ^ (0x1 << bPos));
-    float*pf = (float*)&tmp;
-    return *pf;
- 
-}
-
-long long corruptPtr2Int_64bit(int fault_index, int inject_once, double prob,  int byte_val, long long inst_data) {
-    unsigned int bPos;
-    double p;
-    
-    FLIPIT_Histogram[fault_index]++;
-    if (!flipit_shouldInject(fault_index, inject_once))
-        return inst_data;
-    p = FLIPIT_FaultProb();
-    if (p > prob)
-        return inst_data;
-
-    if (byte_val == -1)
-        byte_val = rand()%8;
-    bPos=(8*byte_val)+rand()%8;
-    FLIPIT_InjectionCount++;
-    flipit_print_injectedErr("Converted Pointer", bPos, fault_index, prob, p);
-    FLIPIT_Attempts = 0;
-    return inst_data ^ ((long long) 0x1L << bPos);
-}
-
-double corruptFloatData_64bit(int fault_index, int inject_once, double prob,  int byte_val, double inst_data) {
-    unsigned int bPos;
-    double p;
-
-    FLIPIT_Histogram[fault_index]++;
-    if (!flipit_shouldInject(fault_index, inject_once))
-        return inst_data;
-    p = FLIPIT_FaultProb();
-    if (p > prob)
-        return inst_data;
-
-    if (byte_val == -1)
-        byte_val = rand()%8;
-    bPos=(8*byte_val)+rand()%8;
-    FLIPIT_InjectionCount++;
-    flipit_print_injectedErr("64-bit IEEE Float Data", bPos, fault_index, prob, p);
-    FLIPIT_Attempts = 0;
-
-	long long* ptr = (long long* ) &inst_data;
-    long long tmp  = (*ptr ^ (0x1L << bPos));
-    double *pf = (double*)&tmp;
-    return *pf;
-}
-
-char* corruptIntAdr_8bit(int fault_index, int inject_once, double prob,  int byte_val, char* inst_add) {
-    unsigned int bPos;
-    double p;
-
-    FLIPIT_Histogram[fault_index]++;
-    if (!flipit_shouldInject(fault_index, inject_once))
-        return inst_add;
-    p = FLIPIT_FaultProb();
-    if (p > prob)
-        return inst_add;
-
-    if (byte_val == -1)
-        byte_val = rand()%8;
-    bPos=(8*byte_val)+rand()%8;
-    FLIPIT_InjectionCount++;
-    flipit_print_injectedErr("8-bit Integer pointer", bPos, fault_index, prob, p);
-    FLIPIT_Attempts = 0;
-    return (char*) ((long long) inst_add ^ ((long long) 0x1L << bPos));
-}
-
-short* corruptIntAdr_16bit(int fault_index, int inject_once, double prob,  int byte_val, short* inst_add) {
-    unsigned int bPos;
-    double p;
-
-    FLIPIT_Histogram[fault_index]++;
-    if (!flipit_shouldInject(fault_index, inject_once))
-        return inst_add;
-    p = FLIPIT_FaultProb();
-    if (p > prob)
-        return inst_add;
-
-    if (byte_val == -1)
-        byte_val = rand()%8;
-    bPos=(8*byte_val)+rand()%8;
-    FLIPIT_InjectionCount++;
-    flipit_print_injectedErr("16-bit Integer pointer", bPos, fault_index, prob, p);
-    FLIPIT_Attempts = 0;
-    return (short*) ((long long) inst_add ^ ((long long) 0x1L << bPos));
-}
-
-int* corruptIntAdr_32bit(int fault_index, int inject_once, double prob,  int byte_val, int* inst_add) {
-    unsigned int bPos;
-    double p;
-
-    FLIPIT_Histogram[fault_index]++;
-    if (!flipit_shouldInject(fault_index, inject_once))
-        return inst_add;
-    p = FLIPIT_FaultProb();
-    if (p > prob)
-        return inst_add;
-
-    if (byte_val == -1)
-        byte_val = rand()%8;
-    bPos=(8*byte_val)+rand()%8;
-    FLIPIT_InjectionCount++;
-    flipit_print_injectedErr("32-bit Integer pointer", bPos, fault_index, prob, p);
-    FLIPIT_Attempts = 0;
-    return (int*) ((long long) inst_add ^ ((long long) 0x1L << bPos));
-}
-
-long long* corruptIntAdr_64bit(int fault_index, int inject_once, double prob,  int byte_val, long long* inst_add) {
-    unsigned int bPos;
-    double p;
-
-    FLIPIT_Histogram[fault_index]++;
-    if (!flipit_shouldInject(fault_index, inject_once))
-        return inst_add;
-    p = FLIPIT_FaultProb();
-    if (p > prob)
-        return inst_add;  
-
-   if (byte_val == -1)
-        byte_val = rand()%8;
-    bPos=(8*byte_val)+rand()%8;
-    FLIPIT_InjectionCount++;
-    flipit_print_injectedErr("64-bit Integer pointer", bPos, fault_index, prob, p);
-    FLIPIT_Attempts = 0;
-    return (long long*) ((long long) inst_add ^ ((long long) 0x1L << bPos));
-}
-
-float* corruptFloatAdr_32bit(int fault_index, int inject_once, double prob,  int byte_val, float* inst_add) {
-    unsigned int bPos;
-    double p;
-
-    FLIPIT_Histogram[fault_index]++;
-    if (!flipit_shouldInject(fault_index, inject_once))
-        return inst_add;
-    p = FLIPIT_FaultProb();
-    if (p > prob)
-        return inst_add;
-
-    if (byte_val == -1)
-        byte_val = rand()%8;
-    bPos=(8*byte_val)+rand()%8;
-    FLIPIT_InjectionCount++;
-    flipit_print_injectedErr("32-bit IEEE Float pointer", bPos, fault_index, prob, p);
-    FLIPIT_Attempts = 0;
-    return (float*) ((long long) inst_add ^ ((long long) 0x1L << bPos));
-}
-
-double* corruptFloatAdr_64bit(int fault_index, int inject_once, double prob,  int byte_val, double* inst_add) {
-    unsigned int bPos;
-    double p;
-
-    FLIPIT_Histogram[fault_index]++;
-    if (!flipit_shouldInject(fault_index, inject_once))
-        return inst_add;
-    p = FLIPIT_FaultProb();
-    if (p > prob)
-        return inst_add;
-
-    if (byte_val == -1)
-        byte_val = rand()%8;
-    bPos=(8*byte_val)+rand()%8;
-    FLIPIT_InjectionCount++;
-    flipit_print_injectedErr("64-bit IEEE Float pointer", bPos, fault_index, prob, p);
-    FLIPIT_Attempts = 0;
-    return (double *) ((long long) inst_add ^ ((long long) 0x1L << bPos)); 
-}
-#endif
