@@ -36,9 +36,23 @@ mkdir -p -v include/FlipIt/pass
 cp src/pass/faults.h include/FlipIt/pass/
 cp src/pass/Logger.h include/FlipIt/pass/
 
+echo "
+
+Compiling FlipIt pass and library"
 cd $FLIPIT_PATH/src/pass
 make -f Makefile
-mkdir $FLIPIT_PATH/lib/
+if ! [[ -d $FLIPIT_PATH/lib/ ]]; then
+    mkdir $FLIPIT_PATH/lib/
+fi
+
+if ! [[ -e libFlipItPass.so ]]; then
+    echo "ERROR: Unable to build library FlipIt LLVM pass. setup.sh terminating...."
+    exit
+fi
+
+if ! [[ -e libFlipIt.so ]]; then
+    echo "WARNING: Unable to build library version of FlipIt to be called from custom LLVM pass."
+fi
 mv *.so $FLIPIT_PATH/lib
 echo "Done!"
 
@@ -63,7 +77,7 @@ cd $FLIPIT_PATH/scripts/
 
 
 
-if [[ -a libcorrupt.a ]]; then
+if [[ -e libcorrupt.a ]]; then
 	cp libcorrupt.a $FLIPIT_PATH/lib/
 	# copy the library to a location that is in the library path
 	if [ "$(whoami)" != "root" ]; then
@@ -88,3 +102,6 @@ Copying headers to include dir"
 cd $FLIPIT_PATH
 cp src/corrupt/*.h include/FlipIt/corrupt/
 cp src/corrupt/corrupt.bc include/FlipIt/corrupt/
+echo "Done!"
+echo ""
+echo "setup.sh terminating..."
