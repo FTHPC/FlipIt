@@ -32,7 +32,8 @@ stateFile = "jacobi"
 import os
 FLIPIT_PATH = os.environ['FLIPIT_PATH'] 
 LLVM_BUILD_PATH = os.environ['LLVM_BUILD_PATH'] 
-SHOW = ""
+SHOW = "" # TODO: set with include and library paths from mpicc -show; or mpicc -showme
+CPP_LIB = "" # not needed for this example (C program)
 
 
 ########### Files to NOT inject inside ###############

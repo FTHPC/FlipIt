@@ -17,7 +17,7 @@ config = "matmul.config"
 funcList = "\"\""
 prob = 1e-8
 byte = -1
-singleInj = 1 
+bit = -1
 ptr = 1
 arith = 1
 ctrl = 1
@@ -32,7 +32,8 @@ stateFile = "matmul"
 import os
 FLIPIT_PATH = os.environ['FLIPIT_PATH'] 
 LLVM_BUILD_PATH = os.environ['LLVM_BUILD_PATH'] 
-SHOW = ""
+SHOW = "" # not needed for this example (No MPI)
+CPP_LIB = "" # not needed for this example (C program)
 
 
 ########### Files to NOT inject inside ###############
