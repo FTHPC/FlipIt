@@ -41,7 +41,10 @@ def shouldInject(argv, notInject):
 
 def addFlipItLinkage(cmd):
     if " -c " not in cmd:
-        cmd += " -L" + FLIPIT_PATH + "/lib -lcorrupt "
+        if histogram == False:
+            cmd += " -L" + FLIPIT_PATH + "/lib -lcorrupt "
+        else:
+            cmd += " -L" + FLIPIT_PATH + "/lib -lcorrupt_histo "
     return cmd
 
 def removeLinking(flags):

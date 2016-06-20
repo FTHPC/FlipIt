@@ -45,3 +45,5 @@ cc = "gcc"
 ############ Verbose compiler output ##############
 verbose = False 
 
+############ Generate a histogram of fault site traversals #########
+histogram = False

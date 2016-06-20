@@ -79,6 +79,10 @@ cd $FLIPIT_PATH/scripts/
 
 if [[ -e libcorrupt.a ]]; then
 	cp libcorrupt.a $FLIPIT_PATH/lib/
+	if [[ -e libcorrupt_histo.a ]]; then
+        cp libcorrupt_histo.a $FLIPIT_PATH/lib/
+    fi
+    
 	# copy the library to a location that is in the library path
 	if [ "$(whoami)" != "root" ]; then
 		echo "Warning: Unable to copy corruption library to '/usr/local/lib'"

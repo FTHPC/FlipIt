@@ -67,3 +67,5 @@ cc = "mpicc"
 ############ Verbose compiler output ################
 verbose = True
 
+############ Generate a histogram of fault site traversals #########
+histogram = False
