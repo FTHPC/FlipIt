@@ -375,14 +375,14 @@ uint64_t corruptIntData_64bit(uint32_t parameter, double prob, uint64_t inst_dat
     uint32_t fault_index = (uint32_t) (parameter & FAULT_IDX_MASK);
 #endif
     // determine which bit & byte should be flipped
-    char bit = ((parameter >> 24) & 0xF); //TODO: VERIFY
+    char bit = ((parameter >> 24) & 0xF); 
     char byte = ((parameter >> 28) & 0xF);
-    printf("###Byte = %d, Bit = %d\n", byte, bit);            
+    //printf("###Byte = %d, Bit = %d\n", byte, bit);            
 
     if (bit == 0xF) bit = rand() % 8; //get correct bit
     if (byte > 7) byte = rand() % (16 - byte); 
 
-    printf("Byte = %d, Bit = %d\n", byte, bit);            
+    //printf("Byte = %d, Bit = %d\n", byte, bit);            
     FLIPIT_InjectionCount++;
     FLIPIT_REMAIN_INJECT_COUNT--;
     if (FLIPIT_REMAIN_INJECT_COUNT == 0) FLIPIT_RankInject = 0; 
