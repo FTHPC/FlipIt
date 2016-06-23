@@ -17,7 +17,7 @@ config = "jacobi.config"
 funcList = "\"\""
 prob = 1e-5
 byte = -1
-singleInj = 1
+bit = -1
 ptr = 1
 arith = 1
 ctrl = 1
@@ -32,8 +32,8 @@ stateFile = "jacobi"
 import os
 FLIPIT_PATH = os.environ['FLIPIT_PATH'] 
 LLVM_BUILD_PATH = os.environ['LLVM_BUILD_PATH'] 
-SHOW = "" # TODO: set with include and library paths from mpicc -show; or mpicc -showme
-CPP_LIB = "" # not needed for this example (C program)
+SHOW = " " # TODO: set with include and library paths from mpicc -show; or mpicc -showme
+CPP_LIB = " " # not needed for this example (C program)
 
 
 ########### Files to NOT inject inside ###############

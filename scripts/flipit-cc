@@ -54,7 +54,7 @@ def removeLinking(flags):
             continue
         else:
             noLinker += i + " "
-    print "LINKING: ", noLinker
+    #print "LINKING: ", noLinker
     return noLinker
 
 def setConfig(argv):

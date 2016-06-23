@@ -51,7 +51,7 @@ static double (*FLIPIT_FaultProb)() = NULL;
 
 static void flipit_parseArgs(uint32_t argc, char** argv);
 static uint8_t flipit_shouldInjectNoCheck(); 
-static uint8_t flipit_shouldInjectCheck(uint32_t fault_index);
+static uint8_t flipit_checkActiveFaultSite(uint32_t fault_index);
 static void flipit_print_injectedErr(char* type, unsigned int bPos, int fault_index, double prob,
                                      double p);
 static double flipit_countdown();
@@ -291,7 +291,7 @@ static uint8_t flipit_shouldInjectNoCheck() {
 }
 
 
-static uint8_t flipit_shouldInjectCheck(uint32_t fault_index) {
+static uint8_t flipit_checkActiveFaultSite(uint32_t fault_index) {
 /*
     FLIPIT_TotalInsts++;                                    //CS
     if ((0 == FLIPIT_State) || (0 == FLIPIT_RankInject) || (0 == FLIPIT_REMAIN_INJECT_COUNT)) //CS
@@ -303,16 +303,17 @@ static uint8_t flipit_shouldInjectCheck(uint32_t fault_index) {
     FLIPIT_Attempts += inject;                              //CS
     return inject;
 */
-
+/*
     int inject_once = FLIPIT_MaxInjections == 1;
     int i;
     int inject = flipit_shouldInjectNoCheck();
     FLIPIT_TotalInsts++;
     if (!inject)
         return 0;
-
+*/
     /* check fault index site */
-    inject = 0;
+    int inject = 0;
+    int i = 0;
     if (FLIPIT_FaultSites != NULL) {
         for (i = 0; i < FLIPIT_NumFaultSites; i++)
             if (FLIPIT_FaultSites[i] == fault_index) {
@@ -367,15 +368,15 @@ uint64_t corruptIntData_64bit(uint32_t parameter, double prob, uint64_t inst_dat
     FLIPIT_Histogram[fault_index]++;
 #endif
 
-    //TODO: add support for CHECK()
+    // verify that it is the correct time to inject
     if (0 == flipit_shouldInjectNoCheck()) return inst_data;
     float p = FLIPIT_FaultProb();
     if (p > prob) return inst_data;
-
-
 #ifndef FLIPIT_HISTOGRAM
     uint32_t fault_index = (uint32_t) (parameter & FAULT_IDX_MASK);
 #endif
+    if (0 == flipit_checkActiveFaultSite(fault_index)) return inst_data;
+
     // determine which bit & byte should be flipped
     char bit = ((parameter >> 24) & 0xF); 
     char byte = ((parameter >> 28) & 0xF);
@@ -408,17 +409,18 @@ float corruptFloatData_32bit(uint32_t parameter, double prob, float inst_data)
     if (0 == flipit_shouldInjectNoCheck()) return inst_data;
     float p = FLIPIT_FaultProb();
     if (p > prob) return inst_data;
-
-
 #ifndef FLIPIT_HISTOGRAM
     uint32_t fault_index = (uint32_t) (parameter & FAULT_IDX_MASK);
 #endif
+    if (0 == flipit_checkActiveFaultSite(fault_index)) return inst_data;
+
+
     // determine which bit & byte should be flipped
-    char bit = ((parameter >> 24) & 0xF); //TODO: VERIFY
+    char bit = ((parameter >> 24) & 0xF); 
     char byte = ((parameter >> 28) & 0xF);
 
     if (bit == 0xF)
-        bit = rand() % 8; //TODO VEIFY TODO wrap bit
+        bit = rand() % 8; 
     else
         bit = bit % 32;
     if (byte > 7)
@@ -440,7 +442,8 @@ float corruptFloatData_32bit(uint32_t parameter, double prob, float inst_data)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-double corruptFloatData_64bit(uint32_t parameter, double prob, double inst_data) {
+double corruptFloatData_64bit(uint32_t parameter, double prob, double inst_data)
+{
 
 #ifdef FLIPIT_HISTOGRAM
     // extract fault_index, byte_val from parameter
@@ -452,11 +455,11 @@ double corruptFloatData_64bit(uint32_t parameter, double prob, double inst_data)
     if (0 == flipit_shouldInjectNoCheck()) return inst_data;
     float p = FLIPIT_FaultProb();
     if (p > prob) return inst_data;
-
-
 #ifndef FLIPIT_HISTOGRAM
     uint32_t fault_index = (uint32_t) (parameter & FAULT_IDX_MASK);
 #endif
+    if (0 == flipit_checkActiveFaultSite(fault_index)) return inst_data;
+
     // determine which bit & byte should be flipped
     char bit = ((parameter >> 24) & 0xF); //TODO: VERIFY
     char byte = ((parameter >> 28) & 0xF);
@@ -492,11 +495,12 @@ uint64_t corruptPtr2Int_64bit(uint32_t parameter, double prob, uint64_t inst_dat
     if (0 == flipit_shouldInjectNoCheck()) return inst_data;
     float p = FLIPIT_FaultProb();
     if (p > prob) return inst_data;
-
-
 #ifndef FLIPIT_HISTOGRAM
     uint32_t fault_index = (uint32_t) (parameter & FAULT_IDX_MASK);
 #endif
+    if (0 == flipit_checkActiveFaultSite(fault_index)) return inst_data;
+
+
     // determine which bit & byte should be flipped
     char bit = ((parameter >> 24) & 0xF); //TODO: VERIFY
     char byte = ((parameter >> 28) & 0xF);
