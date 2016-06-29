@@ -178,7 +178,8 @@ def readTrials(c, filePrefix, customParser = None):
                     l = t[i]
  
                 # grab info stored in  'inj'
-                if "IEEE" in inj[0]:
+                arithFP = 0
+                if "IEEE" in " ".join(inj[0]):
                     arithFP = 1
                 rank = int(inj[1][-1])
                 bit = int(inj[3][-1])
@@ -189,13 +190,13 @@ def readTrials(c, filePrefix, customParser = None):
                 if result == None:
                     print "Unable to locate site #", site, " in database"
                     sys.exit(1)
-                type = result[1]
-                if "Arithmetic" in type:
-                    if arithFP:
-                        type = "Arith-FP"
+                ty = result[1]
+                if "Arith" in ty:
+                    if arithFP == 1:
+                        ty = "Arith-FP"
                     else:
-                        type = "Arith-Fix"
-                    c.execute("UPDATE sites SET type = ? WHERE site=?",(type,site))
+                        ty = "Arith-Fix"
+                    c.execute("UPDATE sites SET type = ? WHERE site=?", (ty,site))
                 llvmInj = int(inj[7][-1])
                 dynCycle = llvmInj
                 c.execute("INSERT INTO injections VALUES (?,?,?,?,?,?,?)", (trial, site, rank, prob, bit, dynCycle, 'NULL'))
@@ -206,7 +207,9 @@ def readTrials(c, filePrefix, customParser = None):
 
             if detectMessage in l:
                 detected = True
-                c.execute("INSERT INTO detections VALUES (?,?,?)", (trial, -1, "---"))
+                c.execute("SELECT * FROM DETECTIONS WHERE trial = ?", (trial,))
+                if c.fetchall() == []:
+                    c.execute("INSERT INTO detections VALUES (?,?,?)", (trial, -1, "---"))
 
             if assertMessage in l:
                 signal = True
