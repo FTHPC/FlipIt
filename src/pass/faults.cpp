@@ -314,16 +314,13 @@ bool  FlipIt::DynamicFaults::finalize() {
     logfile->close();
 
     // put all phinode insts at top of BB
-    for (auto phi : phis) {
-        phi->dump();
-    }
+    //for (auto phi : phis) {
+    //    phi->dump();
+    //}
     for (auto phi : phis) {
         auto BB = phi->getParent();
-        errs() << "============================\n";
-        phi->dump();
         phi->removeFromParent();
         phi->insertBefore(BB->getFirstInsertionPt());
-        BB->dump();
     }
     //delete logfile;
     return oldFaultIdx != faultIdx;
@@ -392,7 +389,6 @@ unsigned long FlipIt::DynamicFaults::updateStateFile(const char* stateFile, unsi
     // clear the file cause the eof bit is reached
     file.clear();
     file.seekg(0, ios::beg);
-    //errs() << "startNum = " << startNum << " sum = " << sum << "\n";
     file << (startNum + sum);
     file.close();
 
@@ -558,8 +554,6 @@ bool FlipIt::DynamicFaults::injectResult(Instruction* I)
             unsigned int t_byte_val = ((-size) << 28) & 0xF0000000;
             unsigned int t_bit_val = (bit_val << 24) & 0x0F000000;
             unsigned int t_faultIdx = faultIdx & 0x00FFFFFF;
-            //errs() << "BYTE= " << size << " BIT= " << bit_val << " IDX= " << faultIdx << "\n";
-            //errs() << "BYTE= " << (t_byte_val >> 28) << " BIT= " << ((t_bit_val >> 24) & 0xF) << " IDX= " << (faultIdx & 0x00FFFFFF) << "\n";
             parameter = t_byte_val | t_bit_val | t_faultIdx;
             args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), parameter);
         }
@@ -567,8 +561,6 @@ bool FlipIt::DynamicFaults::injectResult(Instruction* I)
             unsigned int t_byte_val = ((byte_val % size) << 28) & 0xF0000000;
             unsigned int t_bit_val = (bit_val << 24) & 0x0F000000;
             unsigned int t_faultIdx = faultIdx & 0x00FFFFFF;
-            //errs() << "BYTE= " << byte_val % size << " BIT= " << bit_val << " IDX= " << faultIdx << "\n";
-            //errs() << "BYTE= " << (t_byte_val >> 28) << " BIT= " << ((t_bit_val >> 24) & 0xF) << " IDX= " << (faultIdx & 0x00FFFFFF) << "\n";
             parameter = t_byte_val | t_bit_val | t_faultIdx;
             args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), parameter);
         }
@@ -646,14 +638,20 @@ bool FlipIt::DynamicFaults::injectInOperand(Instruction* I, int operand)
             unsigned int t_byte_val = ((-size) << 28) & 0xF0000000;
             unsigned int t_bit_val = (bit_val << 24) & 0x0F000000;
             unsigned int t_faultIdx = faultIdx & 0x00FFFFFF;
-            //errs() << "BYTE= " << size << " BIT= " << bit_val << " IDX= " << faultIdx << "\n";
-            //errs() << "BYTE= " << (t_byte_val >> 28) << " BIT= " << ((t_bit_val >> 24) & 0xF) << " IDX= " << (faultIdx & 0x00FFFFFF) << "\n";
             parameter = t_byte_val | t_bit_val | t_faultIdx;
             args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), parameter);
         }
         else if (size < byte_val) {
-            parameter &= 0x0FFFFFFFF; // zero out old byte field
-            parameter |= ((byte_val % size) << 28); // insert new
+            //parameter &= 0x0FFFFFFFF; // zero out old byte field
+            //parameter |= ((byte_val % size) << 28); // insert new
+            
+            unsigned int t_byte_val = ((byte_val % size) << 28) & 0xF0000000;
+            unsigned int t_bit_val = (bit_val << 24) & 0x0F000000;
+            unsigned int t_faultIdx = faultIdx & 0x00FFFFFF;
+            //errs() << "BYTE= " << size << " BIT= " << bit_val << " IDX= " << faultIdx << "\n";
+            //errs() << "BYTE= " << (t_byte_val >> 28) << " BIT= " << ((t_bit_val >> 24) & 0xF) << " IDX= " << (faultIdx & 0x00FFFFFF) << "\n";
+            parameter = t_byte_val | t_bit_val | t_faultIdx;
+            errs() << "FIDX = " << faultIdx << "parameter Idx = " << (parameter & 0x00FFFFFF) << " \n";
             args[0] = ConstantInt::get(IntegerType::getInt32Ty(getGlobalContext()), parameter);
         }
         
@@ -805,13 +803,10 @@ unsigned long FlipIt::DynamicFaults::cacheFunctions() { //Module::FunctionListTy
 }
 
 bool FlipIt::DynamicFaults::corruptInstruction(Instruction* I) {
-//errs() << "faultIdx = " << faultIdx << "\n";
 #ifndef COMPILE_PASS
         std::vector<std::string> dummyVector;
         if(!viableFunction(I->getParent()->getParent()->getName().str(),
             dummyVector)) {
-            //errs() << "Returning false for function: " <<
-            //    I->getParent()->getParent()->getName().str() <<"\n";
             return false;
         }    
 #endif
@@ -820,8 +815,13 @@ bool FlipIt::DynamicFaults::corruptInstruction(Instruction* I) {
 
 bool FlipIt::DynamicFaults::injectFault(Instruction* I) {
     bool inj = false;
-    bool simd = false;
     comment = 0; injectionType = 0;
+    
+    unsigned int t_byte_val = (byte_val << 28) & 0xF0000000;
+    unsigned int t_bit_val = (bit_val << 24) & 0x0F000000;
+    unsigned int t_faultIdx = faultIdx & 0x00FFFFFF;
+    parameter = t_byte_val | t_bit_val | t_faultIdx;
+    
     if (ctrl_err && injectControl_NEW(I)) {
         inj = true;
     } else if (arith_err && injectArithmetic_NEW(I)) {
@@ -829,12 +829,12 @@ bool FlipIt::DynamicFaults::injectFault(Instruction* I) {
         Value* tmp = I;
         if (isa<StoreInst>(I)) {
             tmp = I->getOperand(0); // value
-        }
-        if (tmp->getType()->isIntegerTy()) {
-            injectionType = ARITHMETIC_FIX;
-        }   else if (tmp->getType()->isFloatTy()
-            || tmp->getType()->isDoubleTy()) {
-            injectionType = ARITHMETIC_FP;
+            if (tmp->getType()->isIntegerTy()) {
+                injectionType = ARITHMETIC_FIX;
+            }   else if (tmp->getType()->isFloatTy()
+                || tmp->getType()->isDoubleTy()) {
+                injectionType = ARITHMETIC_FP;
+            }
         }
     } else if (ptr_err && injectPointer_NEW(I)) {
         inj = true;
@@ -842,17 +842,18 @@ bool FlipIt::DynamicFaults::injectFault(Instruction* I) {
     } else if ( (ctrl_err || arith_err || ptr_err) && injectCall_NEW(I) ) {
         inj = true;
     } else if (I->getType()->isVectorTy()) {
-            simd = true;
+            simdInst = true;
             inj = injectVector(I);
-            simd=false;
     }
     /*
     else {
         errs() << "Warning: Didn't injection into \"" << *inst << "\"\n";
     }
     */
-    if (inj && !simd) {
+    if (inj && !simdInst) {
         // Site #,   injection type, comment, inst
+
+        //errs() << "FIDX = " << faultIdx << "parameter Idx = " << (parameter & 0x00FFFFFF) << " \n";
 #ifndef COMPILE_PASS
         logfile->logFunctionHeader(faultIdx, I->getParent()->getParent()->getName().str());
         faultIdx = updateStateFile(stateFile.c_str(), 1);
@@ -860,6 +861,8 @@ bool FlipIt::DynamicFaults::injectFault(Instruction* I) {
 #endif
         logfile->logInst(faultIdx++, injectionType, comment, I);
     }
+    if (simdInst == true)
+        simdInst = false;
     return inj;
 }
 /****************************************************************************************/

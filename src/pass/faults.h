@@ -188,6 +188,7 @@ namespace FlipIt {
             unsigned int parameter;
             std::vector<std::string> flist;
             std::vector <Instruction*> phis;
+            bool simdInst;
     };/*end class definition*/
 }/*end namespace*/
             
