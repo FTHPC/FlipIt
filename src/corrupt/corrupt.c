@@ -432,7 +432,7 @@ float corruptFloatData_32bit(uint32_t parameter, double prob, float inst_data)
     FLIPIT_REMAIN_INJECT_COUNT--;
     if (FLIPIT_REMAIN_INJECT_COUNT == 0) FLIPIT_RankInject = 0; 
     
-    flipit_print_injectedErr("32-bit IEEE Float Dat", byte*8 + bit, fault_index, prob, p);
+    flipit_print_injectedErr("32-bit IEEE Float Data", byte*8 + bit, fault_index, prob, p);
     FLIPIT_Attempts = 0;
     
     int* ptr = (int* ) &inst_data;
@@ -473,7 +473,7 @@ double corruptFloatData_64bit(uint32_t parameter, double prob, double inst_data)
     FLIPIT_REMAIN_INJECT_COUNT--;
     if (FLIPIT_REMAIN_INJECT_COUNT == 0) FLIPIT_RankInject = 0; 
     
-    flipit_print_injectedErr("64-bit IEEE Float Dat", byte*8 + bit, fault_index, prob, p);
+    flipit_print_injectedErr("64-bit IEEE Float Data", byte*8 + bit, fault_index, prob, p);
     FLIPIT_Attempts = 0;
     
 	long long* ptr = (long long* ) &inst_data;
