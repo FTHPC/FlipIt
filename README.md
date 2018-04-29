@@ -49,7 +49,7 @@ git clone git@github.com:joncalhoun40/FlipIt.git
 
 ```
 cd $FLIPIT_PATH
-./setup
+./setup.sh
 ```
 5.) Test that everything works:
 
