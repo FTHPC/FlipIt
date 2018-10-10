@@ -13,6 +13,9 @@
 /*              probability.                                                                   */
 /*                                                                                             */
 /***********************************************************************************************/
+#ifdef USE_OLD_ABI
+#define _GLIBCXX_USE_CXX11_ABI 0
+#endif
 
 #include "./faults.h"
 //#include <algorithm>

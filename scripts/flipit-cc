@@ -14,6 +14,13 @@
 #       fault injection. Use it like you would a regular 
 #       compiler.
 #
+#        1.) Compile source code to LLVM IR
+#        2.) Link other LLVM IR files needed for compilation
+#        3.) Run the compiler pass on this linked IR to instrment code
+#            - generate a log file that can be used to relate fault injection
+#              locations to source lines
+#        4.) Compile the transformed IR into object code
+#
 #####################################################################
 import sys
 import os

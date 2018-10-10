@@ -14,6 +14,12 @@ CXXFLAGS= -Wall -O2 -g -std=c++11 -fno-rtti -I$(FLIPIT_PATH)/include
 CXXFLAGS += $(shell $(LLVM_CONFIG) --cxxflags) -fPIC 
 #CXXFLAGS += -DCOMPILE_PASS 
 
+GCC_MAJOR=$(shell gcc -v  2>&1 /dev/null | grep -i "gcc version" | awk -F" " '{split($$3, a, ".")} END{print a[1]}')
+
+ifneq ($(GCC_MAJOR),4)
+	CXXFLAGS += -DUSE_OLD_ABI=1
+endif
+
 LDFLAGS = $(shell $(LLVM_CONFIG) --ldflags)
 
 ifeq ($(shell uname),Darwin)
