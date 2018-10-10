@@ -29,7 +29,7 @@ This project is partially supported by the Air Force Office of Scientific Resear
 2.) Get FlipIt: 
 
 ```
-git clone git@github.com:aperson40/FlipIt.git
+git clone git@github.com:joncalhoun40/FlipIt.git
 ```
 
 3.) Modify your bashrc file to add directory to path and set some environment variables that are used throughout FlipIt
@@ -49,7 +49,7 @@ git clone git@github.com:aperson40/FlipIt.git
 
 ```
 cd $FLIPIT_PATH
-./setup
+./setup.sh
 ```
 5.) Test that everything works:
 
@@ -59,9 +59,9 @@ cd $FLIPIT_PATH/examples
 ./testPass.sh
 ```
 
-If all worked correctly, 2 + 2 is not 4. If not, check out the [Examples](https://github.com/aperson40/FlipIt/wiki/Examples) wiki page for suggested solutions.
+If all worked correctly, 2 + 2 is not 4. If not, check out the [Examples](https://github.com/joncalhoun40/FlipIt/wiki/Examples) wiki page for suggested solutions.
 
-Detailed walk though of the FlipIt [examples](https://github.com/aperson40/FlipIt/wiki/Examples).
+Detailed walk though of the FlipIt [examples](https://github.com/joncalhoun40/FlipIt/wiki/Examples).
 
 ------------------------------
 FlipIt is licensed under the University of Illinois/NCSA Open Source License. See [LICENSE.TXT](LICENSE.TXT) for details.
