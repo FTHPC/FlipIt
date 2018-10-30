@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "matmul.h"
 #include "FlipIt/corrupt/corrupt.h"
 
 int main(int argc, char** argv)
