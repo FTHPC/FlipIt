@@ -7,7 +7,8 @@
 #
 #####################################################################
 
-CXX=$(LLVM_BUILD_PATH)/bin/clang
+#CXX=$(LLVM_BUILD_PATH)/bin/clang
+CXX=g++
 LLVM_CONFIG=$(LLVM_BUILD_PATH)/bin/llvm-config
 
 CXXFLAGS= -Wall -O2 -g -std=c++11 -fno-rtti -I$(FLIPIT_PATH)/include
@@ -25,7 +26,7 @@ LDFLAGS = $(shell $(LLVM_CONFIG) --ldflags)
 ifeq ($(shell uname),Darwin)
 SHARED_LIB_OPT  = -bundle -undefined dynamic_lookup
 else
-SHARED_LIB_OPT  = -shared -Wl,
+SHARED_LIB_OPT  = -shared 
 endif
 
 #all: libFlipItPass.so

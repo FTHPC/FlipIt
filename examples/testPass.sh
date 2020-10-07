@@ -36,7 +36,7 @@ $LLVM_BUILD_PATH/bin/opt -load $FLIPIT_PATH/lib/libFlipItPass.so -FlipIt -srcFil
 $LLVM_BUILD_PATH/bin/clang  -fPIC -g -c final.bc -o final.o  
 
 # display the compiler log file for work.LLVM.txt
-$FLIPIT_PATH/scripts/binary2ascii.py work.c.LLVM.bin -o work.c.LLVM.txt
+python $FLIPIT_PATH/scripts/binary2ascii.py work.c.LLVM.bin -o work.c.LLVM.txt
 cat work.c.LLVM.txt
 
 # build the executable

@@ -31,13 +31,13 @@ outfile = ""
 if "-o" in sys.argv:
     idx = sys.argv.index("-o")
     if idx+1 >= len(sys.argv):
-        print "Unknown output file name."
+        print ("Unknown output file name.")
         sys.exit(1)
     outfile = sys.argv[idx + 1]
 
 infile = sys.argv[1]
 if not os.path.isfile(infile):
-    print "File not found", infile
+    print ("File not found", infile)
     sys.exit(1)
 
 parseBinaryLogFile(None, infile, outfile)

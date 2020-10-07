@@ -71,7 +71,7 @@ for path, subdirs, files in os.walk(LLVM_REPO_PATH + "/llvm"):
         if name in flipitHeaders.keys():
             newInclude =  "#include <" + os.path.join( path[path.find("include")+8:], name) +">"
             #os.system("sed -i '/" + flipitHeaders[name] + "/c\\" + newInclude + "' " + filePath)
-            for i in xrange(len(headerFile)):
+            for i in range(len(headerFile)):
                 line = headerFile[i]
                 if "#include" in line and name in line:
                     headerFile[i] = newInclude +"\n"
@@ -79,17 +79,17 @@ for path, subdirs, files in os.walk(LLVM_REPO_PATH + "/llvm"):
 
 # remove the header files for files not found to eliminate compiler errors
 if len(flipitHeaders.keys()) > 0:
-    print "\n\nWARNING: Unable to locate the following header file(s). " \
-            "Compiliation of the compiler pass may not be successful."
+    print ("\n\nWARNING: Unable to locate the following header file(s). " \
+            "Compiliation of the compiler pass may not be successful.")
 
     for name in flipitHeaders.keys():
-        print  "\t", flipitHeaders[name] 
+        print  ("\t", flipitHeaders[name]) 
         #os.system("sed -i '/" +flipitHeaders[name] +"/c\\ ' " + filePath)
-        for i in xrange(len(headerFile)):
+        for i in range(len(headerFile)):
             line = headerFile[i]
             if "#include" in line and name in line:
                     headerFile[i] = "\n"
-    print "\n\n"
+    print ("\n\n")
 
 outfile = open(filePath, "w")
 for i in headerFile:

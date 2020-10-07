@@ -22,7 +22,7 @@ echo "
 
 Creating pass..."
 cd $FLIPIT_PATH/scripts/
-./findLLVMHeaders.py $FLIPIT_PATH/src/pass/faults.h
+python ./findLLVMHeaders.py $FLIPIT_PATH/src/pass/faults.h
 #cd $LLVM_BUILD_PATH/lib/Transforms/FlipIt
 #./createPass.sh
 
@@ -73,7 +73,7 @@ echo "
 Building the corruption library..."
 cd $FLIPIT_PATH/scripts/
 ./library.sh
-./genBC.py
+python ./genBC.py
 
 
 

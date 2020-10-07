@@ -39,8 +39,8 @@ attributes = []
 for l in err.split("\n"):
 	
 	if "define" in l:
-		s = string.replace(l, "define", "declare", 1)
-		s = string.replace(s, "internal", "", 1)
+		s = l.replace("define", "declare", 1)
+		s = s.replace( "internal", "", 1)
 		outfile.write(s[0:-2])
 		outfile.write("\n")
 		a = s[0:-2].split(" ")[-1]
