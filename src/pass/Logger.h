@@ -108,9 +108,10 @@ class LogFile
     }
     void close() {
         if (outfile.is_open()) {
-            if (needsWriting())
+            if (needsWriting()){
                 write();
-                outfile.close();
+            }
+            outfile.close();
         }
     }
 

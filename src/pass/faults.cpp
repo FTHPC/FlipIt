@@ -107,8 +107,9 @@ FlipIt::DynamicFaults::DynamicFaults(string _funcList, string _configPath, doubl
 bool FlipIt::DynamicFaults::runOnModule(Module &Mod) {
 
     M = &Mod;
-    if (byte_val < -1 || byte_val > 7)
+    if (byte_val < -1 || byte_val > 7) {
         byte_val = rand() % 8;
+    }
 
     /* Check for assertion violation(s) */
     assert(byte_val <= 7 && byte_val >= -1);
@@ -222,11 +223,13 @@ void  FlipIt::DynamicFaults::init() {
     Layout = new DataLayout(M);
 	
     /* fix the bit and byte if they are out of bounds */ 
-    if (byte_val < -1 || byte_val > 7)
+    if (byte_val < -1 || byte_val > 7) {
         byte_val = rand() % 8;
+    }
 
-	if (bit_val < -1 || bit_val > 7)
+	if (bit_val < -1 || bit_val > 7) {
 		bit_val = rand() % 8;
+    }
 	
     /* Check for assertion violation(s) */
     assert(byte_val <= 7 && byte_val >= -1);
