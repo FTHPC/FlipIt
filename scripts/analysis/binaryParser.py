@@ -22,7 +22,7 @@ def unpack(binary, fmt, size = None):
         #print len(binary)
         #print "reading byte[", currSize, "] = ", binary[currSize]
         #tmplue = struct.unpack(fmt, binary[currSize])[0]
-        value = struct.unpack(fmt, binary[currSize])[0]
+        value = struct.unpack(fmt, bytes([binary[currSize]]))[0]
         #value = struct.unpack(fmt, binary[currSize])[0]
         currSize += 1
     elif fmt == 'H':
@@ -32,7 +32,7 @@ def unpack(binary, fmt, size = None):
         value = struct.unpack(fmt, binary[currSize:currSize+8])[0]
         currSize += 8
     elif fmt == 's':
-        value = binary[currSize:currSize + size]
+        value = binary[currSize:currSize + size].decode("utf-8")
         currSize += size
 
     return value
